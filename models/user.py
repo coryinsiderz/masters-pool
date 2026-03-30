@@ -13,7 +13,7 @@ def create_user(conn, username, password):
 
 def get_user_by_username(conn, username):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        cur.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(%s)", (username,))
         return cur.fetchone()
 
 

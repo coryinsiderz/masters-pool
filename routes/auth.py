@@ -8,7 +8,7 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "").strip().lower()
+        username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         from app import get_db_connection
         conn = get_db_connection()
@@ -25,7 +25,7 @@ def login():
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        username = request.form.get("username", "").strip().lower()
+        username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
         if not username or not password:
