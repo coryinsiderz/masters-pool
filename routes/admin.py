@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, flash, g, jsonify, redirect, render_template, request, url_for
 
 from config import Config
 from models.golfer import create_golfer, delete_golfer, get_all_golfers, update_golfer
@@ -99,3 +99,24 @@ def init_db():
     conn.close()
     flash("Database tables initialized.", "success")
     return redirect(url_for("admin.admin"))
+
+
+@admin_bp.route("/admin/test-espn")
+def test_espn():
+    if not is_admin():
+        return "Forbidden", 403
+    from services.espn import fetch_leaderboard, parse_leaderboard
+    data = fetch_leaderboard()
+    parsed = parse_leaderboard(data)
+    if not parsed:
+        return jsonify({"error": "Failed to fetch or parse ESPN data"}), 500
+    return jsonify(parsed)
+
+
+@admin_bp.route("/admin/espn-field")
+def espn_field():
+    if not is_admin():
+        return "Forbidden", 403
+    from services.espn import get_espn_field
+    field = get_espn_field()
+    return jsonify({"count": len(field), "golfers": field})
