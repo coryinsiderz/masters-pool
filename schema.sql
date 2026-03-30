@@ -3,8 +3,11 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
+    recovery_contact VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_contact VARCHAR(100);
 
 CREATE TABLE IF NOT EXISTS golfers (
     id SERIAL PRIMARY KEY,

@@ -28,8 +28,9 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
+        recovery_contact = request.form.get("recovery_contact", "").strip() or None
         if not username or not password:
-            flash("Username and password are required.", "error")
+            flash("Name and password are required.", "error")
         elif password != confirm:
             flash("Passwords do not match.", "error")
         else:
@@ -38,13 +39,13 @@ def register():
             existing = get_user_by_username(conn, username)
             if existing:
                 conn.close()
-                flash("Username already taken.", "error")
+                flash("Name already taken.", "error")
             else:
-                user = create_user(conn, username, password)
+                user = create_user(conn, username, password, recovery_contact)
                 conn.close()
                 session.permanent = True
                 session["user_id"] = user["id"]
-                return redirect(url_for("picks.picks"))
+                return redirect(url_for("team.team"))
         return render_template("register.html")
     return render_template("register.html")
 

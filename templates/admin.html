@@ -7,7 +7,14 @@
     <h1>Admin</h1>
 
     <section class="admin-section">
-        <h2>Add Golfer</h2>
+        <h2>Import from ESPN</h2>
+        <form method="POST" action="{{ url_for('admin.import_field') }}">
+            <button type="submit" class="btn btn-primary">Import ESPN Field</button>
+        </form>
+    </section>
+
+    <section class="admin-section">
+        <h2>Add Player</h2>
         <form method="POST" action="{{ url_for('admin.add_golfer') }}" class="admin-form">
             <div class="form-group">
                 <label for="name">Name</label>
@@ -31,12 +38,12 @@
                     </div>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">Add Golfer</button>
+            <button type="submit" class="btn btn-primary">Add Player</button>
         </form>
     </section>
 
     <section class="admin-section">
-        <h2>Golfer List</h2>
+        <h2>Player List</h2>
         {% set tier_names = {1: "Tier 1", 2: "Strong Side", 3: "Weak Side", 4: "Maybe", 5: "Meh", 6: "Do You Believe in Miracles"} %}
         {% for tier_num in range(1, 7) %}
         {% set tier_golfers = golfers | selectattr("tier", "equalto", tier_num) | list %}
@@ -46,7 +53,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>ESPN ID</th>
+                    <th>Tier</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -54,18 +61,17 @@
                 {% for g in tier_golfers %}
                 <tr>
                     <td>{{ g.name }}</td>
-                    <td>{{ g.espn_id or '' }}</td>
-                    <td class="actions">
+                    <td>
                         <form method="POST" action="{{ url_for('admin.edit_golfer', golfer_id=g.id) }}" class="inline-form">
-                            <input type="text" name="name" value="{{ g.name }}" size="15">
                             <select name="tier">
                                 {% for t in range(1, 7) %}
                                 <option value="{{ t }}" {% if t == g.tier %}selected{% endif %}>{{ t }}</option>
                                 {% endfor %}
                             </select>
-                            <input type="text" name="espn_id" value="{{ g.espn_id or '' }}" size="8">
-                            <button type="submit" class="btn btn-small">Save</button>
+                            <button type="submit" class="btn btn-small">Move</button>
                         </form>
+                    </td>
+                    <td>
                         <form method="POST" action="{{ url_for('admin.remove_golfer', golfer_id=g.id) }}" class="inline-form">
                             <button type="submit" class="btn btn-small btn-danger">Delete</button>
                         </form>

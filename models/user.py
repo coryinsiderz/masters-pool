@@ -2,11 +2,11 @@ import psycopg2.extras
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
-def create_user(conn, username, password):
+def create_user(conn, username, password, recovery_contact=None):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING *",
-            (username, generate_password_hash(password, method='pbkdf2:sha256')),
+            "INSERT INTO users (username, password_hash, recovery_contact) VALUES (%s, %s, %s) RETURNING *",
+            (username, generate_password_hash(password, method='pbkdf2:sha256'), recovery_contact),
         )
         return cur.fetchone()
 

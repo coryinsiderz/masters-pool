@@ -256,6 +256,15 @@ body {
     color: rgba(255, 248, 231, 0.4);
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px rgba(0, 20, 12, 0.95) inset !important;
+    -webkit-text-fill-color: var(--augusta-cream) !important;
+    border-bottom-color: var(--augusta-gold) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
 .form-group input:focus,
 .form-group select:focus {
     border-bottom-color: var(--augusta-cream);

@@ -36,7 +36,7 @@ def add_golfer():
         conn = get_db_connection()
         create_golfer(conn, name, tier, espn_id)
         conn.close()
-        flash("Golfer added.", "success")
+        flash("Player added.", "success")
     return redirect(url_for("admin.admin"))
 
 
@@ -48,7 +48,7 @@ def remove_golfer(golfer_id):
     conn = get_db_connection()
     delete_golfer(conn, golfer_id)
     conn.close()
-    flash("Golfer deleted.", "success")
+    flash("Player deleted.", "success")
     return redirect(url_for("admin.admin"))
 
 
@@ -70,7 +70,7 @@ def edit_golfer(golfer_id):
         conn = get_db_connection()
         update_golfer(conn, golfer_id, **updates)
         conn.close()
-        flash("Golfer updated.", "success")
+        flash("Player updated.", "success")
     return redirect(url_for("admin.admin"))
 
 
@@ -120,3 +120,31 @@ def espn_field():
     from services.espn import get_espn_field
     field = get_espn_field()
     return jsonify({"count": len(field), "golfers": field})
+
+
+@admin_bp.route("/admin/import-field", methods=["POST"])
+def import_field():
+    if not is_admin():
+        return "Forbidden", 403
+    from app import get_db_connection
+    from services.espn import get_espn_field
+    field = get_espn_field()
+    if not field:
+        flash("Failed to fetch ESPN field.", "error")
+        return redirect(url_for("admin.admin"))
+    conn = get_db_connection()
+    imported = 0
+    with conn.cursor() as cur:
+        for player in field:
+            cur.execute(
+                "SELECT 1 FROM golfers WHERE espn_id = %s", (player["espn_id"],)
+            )
+            if not cur.fetchone():
+                cur.execute(
+                    "INSERT INTO golfers (name, tier, espn_id) VALUES (%s, %s, %s)",
+                    (player["name"], 1, player["espn_id"]),
+                )
+                imported += 1
+    conn.close()
+    flash(f"{imported} players imported from ESPN.", "success")
+    return redirect(url_for("admin.admin"))
