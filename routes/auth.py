@@ -1,6 +1,5 @@
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from app import get_db_connection
 from models.user import check_user_password, create_user, get_user_by_username
 
 auth_bp = Blueprint("auth", __name__)
@@ -11,6 +10,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "")
+        from app import get_db_connection
         conn = get_db_connection()
         user = get_user_by_username(conn, username)
         conn.close()
@@ -33,6 +33,7 @@ def register():
         elif password != confirm:
             flash("Passwords do not match.", "error")
         else:
+            from app import get_db_connection
             conn = get_db_connection()
             existing = get_user_by_username(conn, username)
             if existing:

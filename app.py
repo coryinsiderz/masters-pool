@@ -32,6 +32,8 @@ def load_user():
             conn = get_db_connection()
             g.current_user = get_user_by_id(conn, user_id)
             conn.close()
+        except (psycopg2.errors.UndefinedTable, psycopg2.ProgrammingError):
+            g.current_user = None
         except Exception:
             session.pop("user_id", None)
 
@@ -68,4 +70,4 @@ app.register_blueprint(team_bp)
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    app.run(debug=True, port=8888)

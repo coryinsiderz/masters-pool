@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 
-from app import get_db_connection
 from config import Config
 from models.golfer import get_golfers_by_tier
 from models.pick import get_picks_for_user, set_pick
@@ -30,6 +29,7 @@ def picks():
     if not g.current_user:
         return redirect(url_for("auth.login"))
 
+    from app import get_db_connection
     conn = get_db_connection()
     locked = is_locked()
 

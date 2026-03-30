@@ -1,7 +1,5 @@
 from flask import Blueprint, g, jsonify, redirect, render_template, url_for
 
-from app import get_db_connection
-
 leaderboard_bp = Blueprint("leaderboard", __name__)
 
 

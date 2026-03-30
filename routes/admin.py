@@ -1,6 +1,5 @@
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 
-from app import get_db_connection
 from config import Config
 from models.golfer import create_golfer, delete_golfer, get_all_golfers, update_golfer
 
@@ -18,6 +17,7 @@ def is_admin():
 def admin():
     if not is_admin():
         return "Forbidden", 403
+    from app import get_db_connection
     conn = get_db_connection()
     golfers = get_all_golfers(conn)
     conn.close()
@@ -28,6 +28,7 @@ def admin():
 def add_golfer():
     if not is_admin():
         return "Forbidden", 403
+    from app import get_db_connection
     name = request.form.get("name", "").strip()
     tier = int(request.form.get("tier", 1))
     espn_id = request.form.get("espn_id", "").strip() or None
@@ -43,6 +44,7 @@ def add_golfer():
 def remove_golfer(golfer_id):
     if not is_admin():
         return "Forbidden", 403
+    from app import get_db_connection
     conn = get_db_connection()
     delete_golfer(conn, golfer_id)
     conn.close()
@@ -54,6 +56,7 @@ def remove_golfer(golfer_id):
 def edit_golfer(golfer_id):
     if not is_admin():
         return "Forbidden", 403
+    from app import get_db_connection
     name = request.form.get("name", "").strip()
     tier = request.form.get("tier")
     espn_id = request.form.get("espn_id", "").strip() or None
@@ -71,10 +74,24 @@ def edit_golfer(golfer_id):
     return redirect(url_for("admin.admin"))
 
 
+def _tables_exist():
+    from app import get_db_connection
+    conn = get_db_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT COUNT(*) FROM information_schema.tables "
+            "WHERE table_schema = 'public'"
+        )
+        count = cur.fetchone()[0]
+    conn.close()
+    return count > 0
+
+
 @admin_bp.route("/admin/init-db", methods=["POST"])
 def init_db():
-    if not is_admin():
+    if _tables_exist() and not is_admin():
         return "Forbidden", 403
+    from app import get_db_connection
     conn = get_db_connection()
     with conn.cursor() as cur:
         with open("schema.sql") as f:

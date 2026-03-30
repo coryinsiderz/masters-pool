@@ -1,6 +1,5 @@
 from flask import Blueprint, g, redirect, render_template, url_for
 
-from app import get_db_connection
 from models.pick import get_picks_for_user
 from models.tournament import get_scores_for_golfers
 
@@ -12,6 +11,7 @@ def team():
     if not g.current_user:
         return redirect(url_for("auth.login"))
 
+    from app import get_db_connection
     conn = get_db_connection()
     picks = get_picks_for_user(conn, g.current_user["id"])
     golfer_ids = [p["golfer_id"] for p in picks]
