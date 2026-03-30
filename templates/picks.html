@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}My Picks - Baltz Masters Pool{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>My Picks</h1>
+
+    {% if locked %}
+    <div class="locked-notice">Picks are locked. The deadline has passed.</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('picks.picks') }}">
+        {% for tier_num in range(1, 7) %}
+        <div class="pick-tier">
+            <label for="tier_{{ tier_num }}">{{ tiers[tier_num].name }}</label>
+            <select name="tier_{{ tier_num }}" id="tier_{{ tier_num }}" {% if locked %}disabled{% endif %}>
+                <option value="">-- Select --</option>
+                {% for golfer in tiers[tier_num].golfers %}
+                <option value="{{ golfer.id }}"
+                    {% if current_picks.get(tier_num) and current_picks[tier_num].golfer_id == golfer.id %}selected{% endif %}>
+                    {{ golfer.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endfor %}
+
+        {% if not locked %}
+        <button type="submit" class="btn btn-primary">Save Picks</button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

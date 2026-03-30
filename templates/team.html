@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}My Team - Baltz Masters Pool{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>My Team</h1>
+
+    {% set tier_names = {1: "Tier 1", 2: "Strong Side", 3: "Weak Side", 4: "Maybe", 5: "Meh", 6: "Do You Believe in Miracles"} %}
+
+    {% if picks %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Tier</th>
+                <th>Golfer</th>
+                <th>To Par</th>
+                <th>Thru</th>
+                <th>Status</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pick in picks %}
+            {% set score = scores_by_id.get(pick.golfer_id) %}
+            <tr>
+                <td>{{ tier_names.get(pick.tier, pick.tier) }}</td>
+                <td>{{ pick.golfer_name }}</td>
+                <td>{{ score.to_par if score else '--' }}</td>
+                <td>{{ score.thru if score else '--' }}</td>
+                <td>{{ score.status if score else '--' }}</td>
+                <td>{{ score.total_strokes if score else '--' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">You have not made any picks yet. <a href="{{ url_for('picks.picks') }}">Make your picks</a></p>
+    {% endif %}
+</div>
+{% endblock %}

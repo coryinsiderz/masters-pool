@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Baltz Masters Pool{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>Admin</h1>
+
+    <section class="admin-section">
+        <h2>Add Golfer</h2>
+        <form method="POST" action="{{ url_for('admin.add_golfer') }}" class="admin-form">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="tier">Tier</label>
+                <select id="tier" name="tier">
+                    <option value="1">Tier 1</option>
+                    <option value="2">Strong Side</option>
+                    <option value="3">Weak Side</option>
+                    <option value="4">Maybe</option>
+                    <option value="5">Meh</option>
+                    <option value="6">Do You Believe in Miracles</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="espn_id">ESPN ID</label>
+                <input type="text" id="espn_id" name="espn_id">
+            </div>
+            <button type="submit" class="btn btn-primary">Add Golfer</button>
+        </form>
+    </section>
+
+    <section class="admin-section">
+        <h2>Golfer List</h2>
+        {% set tier_names = {1: "Tier 1", 2: "Strong Side", 3: "Weak Side", 4: "Maybe", 5: "Meh", 6: "Do You Believe in Miracles"} %}
+        {% for tier_num in range(1, 7) %}
+        {% set tier_golfers = golfers | selectattr("tier", "equalto", tier_num) | list %}
+        {% if tier_golfers %}
+        <h3>{{ tier_names[tier_num] }}</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>ESPN ID</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in tier_golfers %}
+                <tr>
+                    <td>{{ g.name }}</td>
+                    <td>{{ g.espn_id or '' }}</td>
+                    <td class="actions">
+                        <form method="POST" action="{{ url_for('admin.edit_golfer', golfer_id=g.id) }}" class="inline-form">
+                            <input type="text" name="name" value="{{ g.name }}" size="15">
+                            <select name="tier">
+                                {% for t in range(1, 7) %}
+                                <option value="{{ t }}" {% if t == g.tier %}selected{% endif %}>{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="espn_id" value="{{ g.espn_id or '' }}" size="8">
+                            <button type="submit" class="btn btn-small">Save</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin.remove_golfer', golfer_id=g.id) }}" class="inline-form">
+                            <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        {% endfor %}
+    </section>
+
+    <section class="admin-section">
+        <h2>Database</h2>
+        <form method="POST" action="{{ url_for('admin.init_db') }}">
+            <button type="submit" class="btn btn-primary">Initialize Database Tables</button>
+        </form>
+    </section>
+</div>
+{% endblock %}
