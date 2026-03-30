@@ -6,7 +6,7 @@ def create_user(conn, username, password):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING *",
-            (username, generate_password_hash(password)),
+            (username, generate_password_hash(password, method='pbkdf2:sha256')),
         )
         return cur.fetchone()
 
