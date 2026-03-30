@@ -42,10 +42,12 @@ def load_user():
 def inject_globals():
     deadline = datetime.fromisoformat(Config.PICKS_DEADLINE)
     now = datetime.now(timezone(timedelta(hours=-4)))
+    user = g.get("current_user")
     return {
-        "current_user": g.get("current_user"),
+        "current_user": user,
         "picks_deadline": Config.PICKS_DEADLINE,
         "picks_locked": now > deadline,
+        "is_admin": user and user["username"] == Config.ADMIN_USERNAME,
     }
 
 

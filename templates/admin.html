@@ -14,19 +14,22 @@
                 <input type="text" id="name" name="name" required>
             </div>
             <div class="form-group">
-                <label for="tier">Tier</label>
-                <select id="tier" name="tier">
-                    <option value="1">Tier 1</option>
-                    <option value="2">Strong Side</option>
-                    <option value="3">Weak Side</option>
-                    <option value="4">Maybe</option>
-                    <option value="5">Meh</option>
-                    <option value="6">Do You Believe in Miracles</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="espn_id">ESPN ID</label>
-                <input type="text" id="espn_id" name="espn_id">
+                <label>Tier</label>
+                <div class="custom-dropdown">
+                    <input type="hidden" name="tier" value="1">
+                    <div class="custom-dropdown-trigger">
+                        <span class="dd-text">Tier 1</span>
+                        <span class="dd-arrow">&#9660;</span>
+                    </div>
+                    <div class="custom-dropdown-options">
+                        <div class="custom-dropdown-option selected" data-value="1">Tier 1</div>
+                        <div class="custom-dropdown-option" data-value="2">Strong Side</div>
+                        <div class="custom-dropdown-option" data-value="3">Weak Side</div>
+                        <div class="custom-dropdown-option" data-value="4">Maybe</div>
+                        <div class="custom-dropdown-option" data-value="5">Meh</div>
+                        <div class="custom-dropdown-option" data-value="6">Do You Believe in Miracles</div>
+                    </div>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary">Add Golfer</button>
         </form>
@@ -75,11 +78,11 @@
         {% endfor %}
     </section>
 
-    <section class="admin-section">
-        <h2>Database</h2>
-        <form method="POST" action="{{ url_for('admin.init_db') }}">
+    <details class="admin-section">
+        <summary><h2 style="display:inline">Database</h2></summary>
+        <form method="POST" action="{{ url_for('admin.init_db') }}" style="margin-top:1rem">
             <button type="submit" class="btn btn-primary">Initialize Database Tables</button>
         </form>
-    </section>
+    </details>
 </div>
 {% endblock %}

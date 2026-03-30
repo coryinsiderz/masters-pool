@@ -17,14 +17,13 @@
     {% if current_user %}
     <nav class="main-nav">
         <div class="nav-inner">
-            <a href="{{ url_for('leaderboard.leaderboard') }}" class="nav-brand">BALTZ MASTERS POOL</a>
+            <a href="{{ url_for('leaderboard.leaderboard') }}" class="nav-brand">Baltz Masters Pool</a>
             <button class="nav-toggle" aria-label="Menu">&#9776;</button>
             <ul class="nav-links">
                 <li><a href="{{ url_for('leaderboard.leaderboard') }}">Leaderboard</a></li>
-                <li><a href="{{ url_for('picks.picks') }}">My Picks</a></li>
                 <li><a href="{{ url_for('team.team') }}">My Team</a></li>
                 <li><a href="{{ url_for('scores.scores') }}">Live Scores</a></li>
-                {% if current_user.username == config.ADMIN_USERNAME %}
+                {% if is_admin %}
                 <li><a href="{{ url_for('admin.admin') }}">Admin</a></li>
                 {% endif %}
                 <li class="nav-logout"><a href="{{ url_for('auth.logout') }}">Logout</a></li>

@@ -13,16 +13,30 @@
     <form method="POST" action="{{ url_for('picks.picks') }}">
         {% for tier_num in range(1, 7) %}
         <div class="pick-tier">
-            <label for="tier_{{ tier_num }}">{{ tiers[tier_num].name }}</label>
-            <select name="tier_{{ tier_num }}" id="tier_{{ tier_num }}" {% if locked %}disabled{% endif %}>
-                <option value="">-- Select --</option>
-                {% for golfer in tiers[tier_num].golfers %}
-                <option value="{{ golfer.id }}"
-                    {% if current_picks.get(tier_num) and current_picks[tier_num].golfer_id == golfer.id %}selected{% endif %}>
-                    {{ golfer.name }}
-                </option>
-                {% endfor %}
-            </select>
+            <label>{{ tiers[tier_num].name }}</label>
+            {% if locked %}
+            <div class="custom-dropdown-trigger" style="cursor:default">
+                <span class="dd-text{% if not current_picks.get(tier_num) %} dd-placeholder{% endif %}">
+                    {{ current_picks[tier_num].golfer_name if current_picks.get(tier_num) else '-- Select --' }}
+                </span>
+            </div>
+            {% else %}
+            <div class="custom-dropdown">
+                <input type="hidden" name="tier_{{ tier_num }}" value="{{ current_picks[tier_num].golfer_id if current_picks.get(tier_num) else '' }}">
+                <div class="custom-dropdown-trigger">
+                    <span class="dd-text{% if not current_picks.get(tier_num) %} dd-placeholder{% endif %}">
+                        {{ current_picks[tier_num].golfer_name if current_picks.get(tier_num) else '-- Select --' }}
+                    </span>
+                    <span class="dd-arrow">&#9660;</span>
+                </div>
+                <div class="custom-dropdown-options">
+                    <div class="custom-dropdown-option" data-value="">-- Select --</div>
+                    {% for golfer in tiers[tier_num].golfers %}
+                    <div class="custom-dropdown-option{% if current_picks.get(tier_num) and current_picks[tier_num].golfer_id == golfer.id %} selected{% endif %}" data-value="{{ golfer.id }}">{{ golfer.name }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
 

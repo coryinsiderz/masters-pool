@@ -78,7 +78,7 @@ body {
     text-decoration: none;
     font-size: 1.3rem;
     letter-spacing: 0.2em;
-    text-transform: uppercase;
+
     padding: 1rem 0;
     white-space: nowrap;
 }
@@ -140,7 +140,7 @@ body {
     color: var(--augusta-gold);
     font-size: 1.75rem;
     letter-spacing: 0.2em;
-    text-transform: uppercase;
+
     margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--panel-border);
     padding-bottom: 0.75rem;
@@ -152,7 +152,7 @@ body {
     color: var(--augusta-gold);
     font-size: 1.25rem;
     letter-spacing: 0.15em;
-    text-transform: uppercase;
+
     margin-bottom: 1rem;
 }
 
@@ -184,8 +184,12 @@ body {
     font-weight: 600;
     font-size: 0.8rem;
     letter-spacing: 0.1em;
-    text-transform: uppercase;
+
     border: 1px solid var(--grid-line);
+}
+
+.leaderboard-table thead th {
+    text-transform: uppercase;
 }
 
 .data-table tbody td {
@@ -229,7 +233,7 @@ body {
     font-weight: 600;
     font-size: 0.85rem;
     letter-spacing: 0.1em;
-    text-transform: uppercase;
+
     margin-bottom: 0.4rem;
     color: var(--augusta-gold);
 }
@@ -273,7 +277,7 @@ body {
     font-size: 0.9rem;
     font-weight: 600;
     letter-spacing: 0.15em;
-    text-transform: uppercase;
+
     cursor: pointer;
     border: none;
     transition: background 0.2s;
@@ -321,19 +325,13 @@ body {
     text-align: center;
     font-size: 1.75rem;
     letter-spacing: 0.2em;
-    text-transform: none;
+
     margin-bottom: 2rem;
     border-bottom: 1px solid var(--panel-border);
     padding-bottom: 0.75rem;
 }
 
-.auth-container .form-group label {
-    text-transform: none;
-}
 
-.auth-container .btn {
-    text-transform: none;
-}
 
 .auth-link {
     text-align: center;
@@ -365,7 +363,7 @@ body {
     font-weight: 600;
     font-size: 0.85rem;
     letter-spacing: 0.1em;
-    text-transform: uppercase;
+
     margin-bottom: 0.4rem;
     color: var(--augusta-gold);
 }
@@ -458,6 +456,96 @@ body {
     background: rgba(0, 103, 71, 0.2);
     color: var(--under-par);
     border-color: rgba(0, 103, 71, 0.5);
+}
+
+
+/* ── Custom dropdowns ── */
+
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.custom-dropdown-trigger {
+    width: 100%;
+    padding: 0.6rem 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--augusta-gold);
+    color: var(--augusta-cream);
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.2s;
+}
+
+.custom-dropdown-trigger:hover {
+    border-bottom-color: var(--augusta-cream);
+}
+
+.custom-dropdown-trigger .dd-arrow {
+    color: var(--augusta-gold);
+    font-size: 0.6rem;
+    margin-left: 0.5rem;
+    transition: transform 0.2s;
+}
+
+.custom-dropdown.open .dd-arrow {
+    transform: rotate(180deg);
+}
+
+.custom-dropdown-trigger .dd-placeholder {
+    color: rgba(255, 248, 231, 0.4);
+}
+
+.custom-dropdown-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(0, 20, 12, 0.92);
+    border: 1px solid var(--grid-line);
+    border-top: none;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.custom-dropdown.open .custom-dropdown-options {
+    display: block;
+}
+
+.custom-dropdown-option {
+    padding: 0.5rem 0.6rem;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.9rem;
+    color: var(--augusta-cream);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.custom-dropdown-option:hover {
+    background: rgba(0, 61, 42, 0.92);
+}
+
+.custom-dropdown-option.selected {
+    background: rgba(0, 61, 42, 0.92);
+}
+
+.custom-dropdown-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-dropdown-options::-webkit-scrollbar-track {
+    background: #002a1a;
+}
+
+.custom-dropdown-options::-webkit-scrollbar-thumb {
+    background: var(--grid-line);
 }
 
 
