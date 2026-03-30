@@ -612,4 +612,10 @@ input:-webkit-autofill:focus {
     .auth-container {
         margin: 3rem 1rem;
     }
+
+    .bg-image,
+    .bg-overlay {
+        position: absolute;
+        height: 100vh;
+    }
 }
