@@ -20,9 +20,9 @@
             <a href="{{ url_for('leaderboard.leaderboard') }}" class="nav-brand">Baltz Masters Pool</a>
             <button class="nav-toggle" aria-label="Menu">&#9776;</button>
             <ul class="nav-links">
-                <li><a href="{{ url_for('leaderboard.leaderboard') }}">Leaderboard</a></li>
                 <li><a href="{{ url_for('team.team') }}">My Team</a></li>
-                <li><a href="{{ url_for('scores.scores') }}">Live Scores</a></li>
+                <li><a href="{{ url_for('leaderboard.leaderboard') }}">Leaderboard</a></li>
+                <li><a href="{{ url_for('scores.scores') }}">What's Goin On at Augusta</a></li>
                 {% if is_admin %}
                 <li><a href="{{ url_for('admin.admin') }}">Admin</a></li>
                 {% endif %}
