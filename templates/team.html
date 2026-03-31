@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}My Team - Baltz Masters Pool{% endblock %}
+{% block title %}Squad - Baltz Masters Pool{% endblock %}
 
 {% block content %}
 <div class="page-container">
-    <h1>My Team</h1>
+    <h1>Squad</h1>
 
     {% if not picks_locked %}
     <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:1.5rem;display:inline-block">Edit Picks</a>
