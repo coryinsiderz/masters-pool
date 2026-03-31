@@ -4,31 +4,39 @@
 
 {% block content %}
 <div class="page-container">
-    <h1>Squad</h1>
+    <div class="squad-header">
+        <h1>Squad</h1>
+        {% if has_picks %}
+        <span class="squad-total">{{ team_to_par }}</span>
+        {% endif %}
+    </div>
 
     {% if not picks_locked %}
     <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:1.5rem;display:inline-block">Edit Picks</a>
     {% endif %}
 
-    {% set tier_names = {1: "Tier 1", 2: "Strong Side", 3: "Weak Side", 4: "Maybe", 5: "Meh", 6: "Do You Believe in Miracles"} %}
-
-    {% if picks %}
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Tier</th>
-                <th>Player</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for pick in picks %}
-            <tr>
-                <td>{{ tier_names.get(pick.tier, pick.tier) }}</td>
-                <td>{{ pick.golfer_name }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% if has_picks %}
+    <div class="squad-cards">
+        {% for card in cards %}
+        <div class="squad-card{% if card.status in ('MC','WD','DQ') %} squad-card-cut{% endif %}">
+            <div class="sc-tier">{{ card.tier_name }}</div>
+            <div class="sc-main">
+                <div class="sc-name">{{ card.name }} <span class="sc-own">{{ card.ownership_pct }}%&nbsp;&nbsp;{{ card.ownership_count }}/{{ total_users }}</span></div>
+                <div class="sc-score" style="color:var(--augusta-gold)">{{ card.to_par or '--' }}</div>
+            </div>
+            <div class="sc-details">
+                <span class="sc-pos">{% if card.status in ('MC','WD','DQ') %}{{ card.status }}{% elif card.position %}{{ card.position }}{% else %}--{% endif %}</span>
+                <span class="sc-thru">{% if card.status in ('MC','WD','DQ') %}{% elif card.thru %}Thru {{ card.thru }}{% endif %}</span>
+            </div>
+            <div class="sc-rounds">
+                <span>R1: {{ card.round_1 or '--' }}</span>
+                <span>R2: {{ card.round_2 or '--' }}</span>
+                <span>R3: {{ card.round_3 or '--' }}</span>
+                <span>R4: {{ card.round_4 or '--' }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
     {% else %}
     <p class="empty-state">You haven't made your picks yet. <a href="{{ url_for('picks.picks') }}" style="color:var(--augusta-gold)">Make your picks</a></p>
     {% endif %}

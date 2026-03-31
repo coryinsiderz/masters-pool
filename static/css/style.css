@@ -460,6 +460,105 @@ input:-webkit-autofill:focus {
     border: 1px solid;
 }
 
+/* ── Squad cards ── */
+
+.squad-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 0.75rem;
+}
+
+.squad-header h1 {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.squad-total {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.75rem;
+    color: var(--augusta-gold);
+}
+
+.squad-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.squad-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    padding: 1rem 1.25rem;
+}
+
+.squad-card-cut {
+    opacity: 0.55;
+}
+
+.sc-tier {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--augusta-gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.375rem;
+}
+
+.sc-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.375rem;
+}
+
+.sc-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--augusta-cream);
+}
+
+.sc-name .sc-own {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--augusta-gold);
+    margin-left: 0.375rem;
+}
+
+.sc-score {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.sc-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: rgba(255, 248, 231, 0.6);
+    margin-bottom: 0.5rem;
+}
+
+.sc-pos {
+    font-weight: 700;
+    color: var(--augusta-cream);
+}
+
+.sc-rounds {
+    display: flex;
+    gap: 1.25rem;
+    font-size: 0.8rem;
+    color: rgba(255, 248, 231, 0.6);
+}
+
+.sc-rounds span {
+    white-space: nowrap;
+}
+
+
 .flash-error {
     background: rgba(196, 30, 58, 0.2);
     color: #ff8a9a;
