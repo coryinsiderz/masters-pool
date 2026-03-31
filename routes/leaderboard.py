@@ -16,7 +16,7 @@ TIER_NAMES = {
 
 
 def _get_ownership_data(conn):
-    """Get ownership counts for each golfer across all pool users."""
+    """Get ownership counts and owner names for each golfer."""
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("SELECT COUNT(DISTINCT user_id) FROM picks")
         total_users = cur.fetchone()["count"]
@@ -25,13 +25,21 @@ def _get_ownership_data(conn):
                FROM picks GROUP BY golfer_id"""
         )
         counts = {r["golfer_id"]: r["cnt"] for r in cur.fetchall()}
-    return total_users, counts
+        cur.execute(
+            """SELECT p.golfer_id, u.username
+               FROM picks p JOIN users u ON p.user_id = u.id
+               ORDER BY u.username"""
+        )
+        owner_names = {}
+        for r in cur.fetchall():
+            owner_names.setdefault(r["golfer_id"], []).append(r["username"])
+    return total_users, counts, owner_names
 
 
 def _build_full_leaderboard(conn):
     """Build leaderboard with per-tier golfer data and ownership."""
     standings = build_leaderboard(conn)
-    total_users, ownership = _get_ownership_data(conn)
+    total_users, ownership, owner_names = _get_ownership_data(conn)
 
     result = []
     for entry in standings:
@@ -54,6 +62,12 @@ def _build_full_leaderboard(conn):
                 "is_counting": g.get("counting", False),
                 "ownership_count": own_count,
                 "ownership_pct": own_pct,
+                "owners": owner_names.get(gid, []),
+                "position": g.get("position", ""),
+                "round_1": g.get("round_1"),
+                "round_2": g.get("round_2"),
+                "round_3": g.get("round_3"),
+                "round_4": g.get("round_4"),
             }
 
         # Calculate team to-par total
@@ -61,6 +75,7 @@ def _build_full_leaderboard(conn):
         team_to_par = _sum_to_par(counting)
 
         result.append({
+            "user_id": entry["user_id"],
             "username": entry["username"],
             "rank": entry["rank"],
             "team_total": entry["team_total"],

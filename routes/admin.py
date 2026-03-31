@@ -182,3 +182,51 @@ def bulk_tier_update():
     conn.close()
     flash(f"{updated} tier assignments saved.", "success")
     return redirect(url_for("admin.admin"))
+
+
+@admin_bp.route("/admin/create-test-users", methods=["POST"])
+def create_test_users():
+    """Temporary route for testing. Delete before go-live."""
+    if not is_admin():
+        return "Forbidden", 403
+    import random
+    from app import get_db_connection
+    from models.user import create_user, get_user_by_username
+    from models.pick import set_pick
+
+    conn = get_db_connection()
+
+    # Distribute golfers across 6 tiers evenly
+    with conn.cursor() as cur:
+        cur.execute("SELECT id FROM golfers ORDER BY name")
+        all_ids = [r[0] for r in cur.fetchall()]
+    for i, gid in enumerate(all_ids):
+        tier = (i % 6) + 1
+        update_golfer(conn, gid, tier=tier)
+    tier_msg = f"Distributed {len(all_ids)} golfers across 6 tiers."
+
+    # Create test users
+    test_users = ["Alice", "Bob", "Charles", "David", "Evan"]
+    created = 0
+    picked = 0
+    for name in test_users:
+        existing = get_user_by_username(conn, name)
+        if existing:
+            continue
+        user = create_user(conn, name, "test123")
+        created += 1
+        # Assign random picks
+        for tier_num in range(1, 7):
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id FROM golfers WHERE tier = %s ORDER BY RANDOM() LIMIT 1",
+                    (tier_num,),
+                )
+                row = cur.fetchone()
+                if row:
+                    set_pick(conn, user["id"], tier_num, row[0])
+                    picked += 1
+
+    conn.close()
+    flash(f"{tier_msg} Created {created} users with {picked} picks.", "success")
+    return redirect(url_for("admin.admin"))

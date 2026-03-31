@@ -14,6 +14,13 @@
     </section>
 
     <section class="admin-section">
+        <h2>Test Data</h2>
+        <form method="POST" action="{{ url_for('admin.create_test_users') }}">
+            <button type="submit" class="btn btn-primary">Create Test Users</button>
+        </form>
+    </section>
+
+    <section class="admin-section">
         <h2>Add Player</h2>
         <form method="POST" action="{{ url_for('admin.add_golfer') }}" class="admin-form">
             <div class="form-group">

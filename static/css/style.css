@@ -751,7 +751,14 @@ input:-webkit-autofill:focus {
 
 .mc-own {
     font-size: 0.65rem;
-    color: rgba(255, 248, 231, 0.4);
+    color: var(--augusta-gold);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(200, 169, 81, 0.3);
+}
+
+.mc-own:hover {
+    text-decoration-color: var(--augusta-gold);
 }
 
 /* ── Ownership popover (scores page) ── */
@@ -818,6 +825,53 @@ input:-webkit-autofill:focus {
 }
 
 
+/* ── Expandable rows ── */
+
+.expandable-row {
+    cursor: pointer;
+}
+
+.expand-icon {
+    font-size: 0.6rem;
+    display: inline-block;
+    transition: transform 0.15s;
+    margin-right: 0.25rem;
+    color: var(--augusta-gold);
+}
+
+.expandable-row.expanded .expand-icon {
+    transform: rotate(90deg);
+}
+
+.detail-row td {
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.detail-panel-table {
+    padding: 0.5rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--grid-line);
+    border-top: none;
+    overflow-x: auto;
+}
+
+.detail-table {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+}
+
+.detail-table thead th {
+    font-size: 0.7rem;
+    padding: 0.375rem 0.5rem;
+}
+
+.detail-table tbody td {
+    padding: 0.375rem 0.5rem;
+}
+
+
 /* ── Mobile ── */
 
 @media (max-width: 768px) {
@@ -871,6 +925,10 @@ input:-webkit-autofill:focus {
 
     .auth-container {
         margin: 3rem 1rem;
+    }
+
+    .detail-table {
+        font-size: 0.7rem;
     }
 
     body::before {

@@ -119,6 +119,33 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // ── Expandable leaderboard rows ──
+    var expandableRows = document.querySelectorAll(".expandable-row");
+    expandableRows.forEach(function (row) {
+        row.addEventListener("click", function (e) {
+            // Don't toggle row when clicking ownership popover trigger
+            if (e.target.closest(".owned-trigger")) return;
+            e.stopPropagation();
+            closeOwnerPopover();
+            var detailRow = row.nextElementSibling;
+            if (!detailRow || !detailRow.classList.contains("detail-row")) return;
+            var isOpen = row.classList.contains("expanded");
+            // Close all
+            expandableRows.forEach(function (r) {
+                r.classList.remove("expanded");
+                var dr = r.nextElementSibling;
+                if (dr && dr.classList.contains("detail-row")) {
+                    dr.style.display = "none";
+                }
+            });
+            // Toggle clicked
+            if (!isOpen) {
+                row.classList.add("expanded");
+                detailRow.style.display = "";
+            }
+        });
+    });
+
     // ── Scores filter toggle ──
     var filterBtn = document.getElementById("scores-filter");
     if (filterBtn) {

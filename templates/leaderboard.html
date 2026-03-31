@@ -23,28 +23,70 @@
         </thead>
         <tbody>
             {% for entry in standings %}
-            <tr data-name="{{ entry.username }}"
+            <tr class="expandable-row"
+                data-name="{{ entry.username }}"
                 data-total="{{ entry.team_to_par }}"
                 {% for t in range(1, 7) %}
                 data-tier-{{ t }}-par="{{ entry.tiers[t].to_par if entry.tiers.get(t) else '' }}"
                 {% endfor %}>
-                <td class="sticky-col">{{ entry.username|display_name }}</td>
-                <td class="total-col" style="color:var(--augusta-gold);font-weight:700">{{ entry.team_to_par }}</td>
+                <td class="sticky-col"><span class="expand-icon">&#9654;</span> {{ entry.username|display_name }}</td>
+                <td class="total-col">{{ entry.team_to_par }}</td>
                 {% for t in range(1, 7) %}
                 {% if entry.tiers.get(t) %}
                 {% set g = entry.tiers[t] %}
                 <td class="tier-cell {% if g.is_counting %}counting{% else %}bench{% endif %}">
                     <div class="mini-card">
                         <span class="mc-name">{{ g.name }}</span>
-                        <span class="mc-score" style="color:var(--augusta-gold)">{{ g.to_par or '--' }}</span>
-                        <span class="mc-thru">{% if g.status in ('MC','WD','DQ') %}{{ g.status }}{% else %}{{ g.thru or '' }}{% endif %}</span>
-                        <span class="mc-own">{{ g.ownership_pct }}%</span>
+                        <span class="mc-score">{% if g.status in ('MC','WD','DQ') %}{{ g.status }}{% else %}{{ g.to_par or '--' }}{% endif %}</span>
+                        <span class="mc-thru">{% if g.status not in ('MC','WD','DQ') %}{{ g.thru or '' }}{% endif %}</span>
+                        <span class="mc-own owned-trigger" data-owners="{{ g.owners | map('display_name') | join(', ') }}">{{ g.ownership_pct }}%</span>
                     </div>
                 </td>
                 {% else %}
                 <td class="tier-cell bench"><div class="mini-card"><span class="mc-name">--</span></div></td>
                 {% endif %}
                 {% endfor %}
+            </tr>
+            <tr class="detail-row" style="display:none">
+                <td colspan="8">
+                    <div class="detail-panel-table">
+                    <table class="data-table detail-table">
+                        <thead>
+                            <tr>
+                                <th>Tier</th>
+                                <th>Player</th>
+                                <th>Pos</th>
+                                <th>To Par</th>
+                                <th>Thru</th>
+                                <th>R1</th>
+                                <th>R2</th>
+                                <th>R3</th>
+                                <th>R4</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in range(1, 7) %}
+                            {% if entry.tiers.get(t) %}
+                            {% set g = entry.tiers[t] %}
+                            <tr>
+                                <td>{{ tier_names[t] }}</td>
+                                <td>{{ g.name }}</td>
+                                <td>{% if g.status in ('MC','WD','DQ') %}{{ g.status }}{% else %}{{ g.position or '--' }}{% endif %}</td>
+                                <td style="color:var(--augusta-gold);font-weight:700">{{ g.to_par or '--' }}</td>
+                                <td>{% if g.status in ('MC','WD','DQ') %}{{ g.status }}{% else %}{{ g.thru or '--' }}{% endif %}</td>
+                                <td>{{ g.round_1 or '--' }}</td>
+                                <td>{{ g.round_2 or '--' }}</td>
+                                <td>{% if g.status in ('MC','WD','DQ') and not g.round_3 %}{{ g.status }}{% else %}{{ g.round_3 or '--' }}{% endif %}</td>
+                                <td>{% if g.status in ('MC','WD','DQ') and not g.round_4 %}{{ g.status }}{% else %}{{ g.round_4 or '--' }}{% endif %}</td>
+                                <td>{% if g.status in ('MC','WD','DQ') %}{{ g.status }}{% else %}{{ g.total_strokes or '--' }}{% endif %}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
