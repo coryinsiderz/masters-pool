@@ -6,6 +6,10 @@
 <div class="page-container">
     <h1>My Team</h1>
 
+    {% if not picks_locked %}
+    <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:1.5rem;display:inline-block">Edit Picks</a>
+    {% endif %}
+
     {% set tier_names = {1: "Tier 1", 2: "Strong Side", 3: "Weak Side", 4: "Maybe", 5: "Meh", 6: "Do You Believe in Miracles"} %}
 
     {% if picks %}
@@ -14,28 +18,19 @@
             <tr>
                 <th>Tier</th>
                 <th>Player</th>
-                <th>To Par</th>
-                <th>Thru</th>
-                <th>Status</th>
-                <th>Total</th>
             </tr>
         </thead>
         <tbody>
             {% for pick in picks %}
-            {% set score = scores_by_id.get(pick.golfer_id) %}
             <tr>
                 <td>{{ tier_names.get(pick.tier, pick.tier) }}</td>
                 <td>{{ pick.golfer_name }}</td>
-                <td>{{ score.to_par if score else '--' }}</td>
-                <td>{{ score.thru if score else '--' }}</td>
-                <td>{{ score.status if score else '--' }}</td>
-                <td>{{ score.total_strokes if score else '--' }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <p class="empty-state">You have not made any picks yet. <a href="{{ url_for('picks.picks') }}">Make your picks</a></p>
+    <p class="empty-state">You haven't made your picks yet. <a href="{{ url_for('picks.picks') }}" style="color:var(--augusta-gold)">Make your picks</a></p>
     {% endif %}
 </div>
 {% endblock %}

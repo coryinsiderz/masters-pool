@@ -1,26 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}My Picks - Baltz Masters Pool{% endblock %}
+{% block title %}Make Your Picks - Baltz Masters Pool{% endblock %}
 
 {% block content %}
 <div class="page-container">
-    <h1>My Picks</h1>
+    <h1>Make Your Picks</h1>
 
-    {% if locked %}
+    {% if not has_players %}
+    <p class="empty-state">Players haven't been added yet. Check back soon.</p>
+    {% elif locked %}
     <div class="locked-notice">Picks are locked. The deadline has passed.</div>
-    {% endif %}
-
+    {% set tier_names = {1: "Tier 1", 2: "Strong Side", 3: "Weak Side", 4: "Maybe", 5: "Meh", 6: "Do You Believe in Miracles"} %}
+    {% for tier_num in range(1, 7) %}
+    <div class="pick-tier">
+        <label>{{ tiers[tier_num].name }}</label>
+        <div class="custom-dropdown-trigger" style="cursor:default">
+            <span class="dd-text{% if not current_picks.get(tier_num) %} dd-placeholder{% endif %}">
+                {{ current_picks[tier_num].golfer_name if current_picks.get(tier_num) else '-- No pick --' }}
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
     <form method="POST" action="{{ url_for('picks.picks') }}">
         {% for tier_num in range(1, 7) %}
         <div class="pick-tier">
             <label>{{ tiers[tier_num].name }}</label>
-            {% if locked %}
-            <div class="custom-dropdown-trigger" style="cursor:default">
-                <span class="dd-text{% if not current_picks.get(tier_num) %} dd-placeholder{% endif %}">
-                    {{ current_picks[tier_num].golfer_name if current_picks.get(tier_num) else '-- Select --' }}
-                </span>
-            </div>
-            {% else %}
             <div class="custom-dropdown">
                 <input type="hidden" name="tier_{{ tier_num }}" value="{{ current_picks[tier_num].golfer_id if current_picks.get(tier_num) else '' }}">
                 <div class="custom-dropdown-trigger">
@@ -36,13 +41,11 @@
                     {% endfor %}
                 </div>
             </div>
-            {% endif %}
         </div>
         {% endfor %}
 
-        {% if not locked %}
-        <button type="submit" class="btn btn-primary">Save Picks</button>
-        {% endif %}
+        <button type="submit" class="btn btn-primary">Lock It In</button>
     </form>
+    {% endif %}
 </div>
 {% endblock %}
