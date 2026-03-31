@@ -1,0 +1,77 @@
+# Baltz Masters Pool -- Project Context
+
+## What is this
+
+Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournament. Users register, pick one golfer per tier (6 tiers), and compete based on the best 4-of-6 cumulative stroke totals. The app pulls live scores from ESPN's unofficial golf API and calculates standings automatically. The visual design mimics the Augusta National scoreboard aesthetic -- dark backgrounds, gold accents, serif typography, no modern UI flourishes.
+
+## Deployment
+
+- **Live URL**: https://baltzmasters.up.railway.app
+- **Hosting**: Railway (web service, gunicorn)
+- **Database**: Neon Postgres (shared between local dev and production via DATABASE_URL)
+- **GitHub**: https://github.com/coryinsiderz/masters-pool
+- **Python**: 3.12.8 pinned in runtime.txt (local dev runs on system Python 3.9)
+
+## What's built and working
+
+| Feature | Route | Status |
+|---------|-------|--------|
+| User registration | POST /register | Working, stores recovery contact |
+| User login | POST /login | Working, case-insensitive username lookup |
+| User logout | GET /logout | Working |
+| Session management | before_request hook | 30-day permanent sessions |
+| Make picks | GET/POST /picks | Working, 6 custom dropdowns, server-side deadline enforcement |
+| Squad page | GET /team | Shows user's 6 picks with "Edit Picks" link |
+| Pool leaderboard | GET /leaderboard | 4-of-6 scoring engine, tie notation, ranked standings |
+| Leaderboard API | GET /api/leaderboard | JSON endpoint for standings |
+| Tournament scores | GET /scores | Full scoreboard from ESPN data, MC/WD/DQ at bottom |
+| Admin panel | GET /admin | Player management, tier assignment, ESPN import |
+| ESPN import | POST /admin/import-field | Bulk import golfers from ESPN field |
+| Score update | GET /admin/update-scores | Manual ESPN score pull |
+| Bulk tier update | POST /admin/bulk-tier-update | Batch tier reassignment |
+| Init database | POST /admin/init-db | Runs schema.sql, accessible without login when no tables exist |
+| ESPN test | GET /admin/test-espn | Returns raw parsed ESPN data as JSON |
+| ESPN field | GET /admin/espn-field | Lists all ESPN field golfers with IDs |
+| Health check | GET /health | Returns 200 OK |
+
+## What's not built yet
+
+- Background score polling (APScheduler is in requirements but no scheduler is started)
+- Auto-refresh on leaderboard/scores pages (polling or websockets)
+- Password reset flow using recovery_contact
+- User profile/settings page
+- Per-round score breakdowns on the leaderboard (R1-R4 columns for team totals)
+- Golfer detail view (click a golfer name to see their scorecard)
+- Mobile hamburger menu close-on-navigate
+- Masters-specific ESPN event ID targeting (currently uses whatever tournament is active)
+
+## Key decisions
+
+- **Tier names** (in order): Tier 1, Strong Side, Weak Side, Maybe, Meh, Do You Believe in Miracles
+- **Scoring**: Best 4 of 6 cumulative strokes. MC/WD/DQ golfers get worst-active-score + 1.
+- **Tiebreaker**: Best individual finishing position among counting golfers
+- **Picks deadline**: 2026-04-09T07:30:00-04:00 (enforced server-side)
+- **Admin**: Determined by ADMIN_USERNAME env var (default "cory"), not the is_admin DB column
+- **Fonts**: Cormorant Garamond (titles/brand, weight 500-600), Libre Baskerville (body/tables)
+- **Colors**: --augusta-green #006747, --augusta-gold #C8A951, --augusta-cream #FFF8E7, --over-par #C41E3A, --under-par #00a86b
+- **No uppercase**: text-transform removed site-wide except leaderboard table headers
+- **Nav brand**: "Baltz Masters Pool" in mixed case
+- **To-par display**: All gold (#C8A951), no red/green color coding
+- **Custom dropdowns**: Replace all native <select> elements for font consistency
+- **Username storage**: Preserved as typed (case-insensitive lookup via LOWER())
+- **Password hashing**: pbkdf2:sha256 (not scrypt) for Python 3.9 compatibility
+- **Display labels**: "Player" not "Golfer" in all user-facing text. "Squad" not "My Team".
+- **Nav order**: Squad, Leaderboard, What's Goin On at Augusta, Admin (if admin), Logout
+- **Favicon**: Hibiscus emoji SVG (closest to azalea)
+
+## Known issues and quirks
+
+- **Shared database**: Local dev and Railway production use the same Neon Postgres instance. Every write is real.
+- **Python 3.9 locally**: System Python is 3.9, Railway runs 3.12.8. Werkzeug scrypt hashing fails on 3.9, so pbkdf2:sha256 is used.
+- **Mobile Safari background**: position:fixed on background div fails on iOS. Mobile breakpoint switches to position:absolute with height:100vh.
+- **Flask template caching**: After editing templates, the dev server must be restarted.
+- **ESPN API is unofficial**: The scoreboard endpoint can change without notice. All field access handles missing data gracefully.
+- **No scheduler running**: Score updates are manual via /admin/update-scores. APScheduler is installed but not configured.
+- **Admin check uses username**: The admin gate compares current_user.username to ADMIN_USERNAME, not the is_admin boolean in the database.
+- **Delete buttons inside bulk form**: The delete button forms in admin.html are nested inside the bulk tier update form. This works because each delete is its own form with a different action, but it's technically invalid HTML nesting.
+- **Dev server port**: Runs on 8888 locally (5050 and 5055 were taken).
