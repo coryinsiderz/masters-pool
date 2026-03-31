@@ -1,9 +1,11 @@
 import psycopg2.extras
-from flask import Blueprint, g, redirect, render_template, url_for
+from flask import Blueprint, g, redirect, render_template, request, url_for
 
 from models.tournament import get_all_scores, get_tournament_state
 
 scores_bp = Blueprint("scores", __name__)
+
+AUGUSTA_PAR = [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4]
 
 
 @scores_bp.route("/scores")
@@ -37,7 +39,7 @@ def scores():
 
     conn.close()
 
-    # Build ownership map: golfer_id -> {count, owners}
+    # Build ownership map
     ownership = {}
     for row in owner_rows:
         gid = row["golfer_id"]
@@ -54,7 +56,7 @@ def scores():
         s["ownership_pct"] = round(own["count"] / total_users * 100) if total_users else 0
         s["owners"] = own["owners"]
 
-    # Split into active and cut/withdrawn
+    # Split into active and cut
     active = []
     cut = []
     for s in all_scores:
@@ -65,14 +67,35 @@ def scores():
 
     active.sort(key=lambda s: _parse_position(s.get("position", "")))
     cut.sort(key=lambda s: s.get("name", ""))
-
     scores_list = active + cut
+
+    # Check view mode
+    view = request.args.get("view", "leaderboard")
+    current_round = tournament.get("current_round", 0) if tournament else 0
+    selected_round = request.args.get("round", type=int) or current_round or 1
+
+    scorecard_data = {}
+    has_hole_data = False
+    if view == "board":
+        from services.espn import fetch_scorecard_data, get_mock_scorecard_data
+        scorecard_data = fetch_scorecard_data()
+        has_hole_data = any(v.get("has_holes") for v in scorecard_data.values())
+        if not has_hole_data:
+            scorecard_data = get_mock_scorecard_data()
+            has_hole_data = True
+
     return render_template(
         "scores.html",
         scores=scores_list,
         tournament=tournament,
         total_users=total_users,
         my_golfer_ids=my_golfer_ids,
+        view=view,
+        par=AUGUSTA_PAR,
+        scorecard_data=scorecard_data,
+        has_hole_data=has_hole_data,
+        selected_round=selected_round,
+        current_round=current_round,
     )
 
 

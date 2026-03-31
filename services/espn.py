@@ -218,6 +218,109 @@ def update_scores(conn=None):
             conn.close()
 
 
+def fetch_scorecard_data():
+    """Fetch hole-by-hole scorecard data from ESPN.
+
+    Returns dict keyed by espn_id with per-round hole scores:
+    {
+        espn_id: {
+            "name": str,
+            "round_1_holes": [18 ints or None],
+            "round_2_holes": [...],
+            "round_3_holes": [...],
+            "round_4_holes": [...],
+        }
+    }
+
+    ESPN hole periods: 10-18 = holes 1-9, 1-9 = holes 10-18.
+    """
+    data = fetch_leaderboard()
+    if not data:
+        return {}
+
+    events = data.get("events", [])
+    if not events:
+        return {}
+
+    comp = events[0].get("competitions", [{}])[0]
+    competitors = comp.get("competitors", [])
+    result = {}
+
+    for competitor in competitors:
+        espn_id = str(competitor.get("id", ""))
+        athlete = competitor.get("athlete", {})
+        name = athlete.get("fullName", "")
+        linescores = competitor.get("linescores", [])
+
+        rounds = {}
+        has_holes = False
+        for ls in linescores:
+            round_num = ls.get("period")
+            if not round_num or round_num < 1 or round_num > 4:
+                continue
+            holes_data = ls.get("linescores", [])
+            if not holes_data:
+                rounds[round_num] = [None] * 18
+                continue
+            has_holes = True
+            # Map ESPN periods to hole numbers
+            # periods 10-18 = holes 1-9, periods 1-9 = holes 10-18
+            hole_scores = [None] * 18
+            for hole in holes_data:
+                period = hole.get("period")
+                value = hole.get("value")
+                if period is None or value is None:
+                    continue
+                if 10 <= period <= 18:
+                    hole_num = period - 9  # 10->1, 11->2, ..., 18->9
+                elif 1 <= period <= 9:
+                    hole_num = period + 9  # 1->10, 2->11, ..., 9->18
+                else:
+                    continue
+                hole_scores[hole_num - 1] = int(value)
+            rounds[round_num] = hole_scores
+
+        result[espn_id] = {
+            "name": name,
+            "round_1_holes": rounds.get(1, [None] * 18),
+            "round_2_holes": rounds.get(2, [None] * 18),
+            "round_3_holes": rounds.get(3, [None] * 18),
+            "round_4_holes": rounds.get(4, [None] * 18),
+            "has_holes": has_holes,
+        }
+
+    logger.info("Fetched scorecard data for %d golfers (%d with holes)",
+                len(result), sum(1 for v in result.values() if v["has_holes"]))
+    return result
+
+
+def get_mock_scorecard_data():
+    """Temporary mock data for visual testing. Delete before go-live."""
+    import random
+    from app import get_db_connection
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT espn_id, name FROM golfers LIMIT 20")
+    golfers = cur.fetchall()
+    conn.close()
+
+    augusta_par = [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4]
+    data = {}
+    for g in golfers:
+        espn_id = g[0] or str(g[1])
+        rounds = {"has_holes": True, "name": g[1]}
+        for r in range(1, 3):
+            holes = []
+            for par in augusta_par:
+                offset = random.choice([-2, -1, -1, 0, 0, 0, 0, 0, 1, 1, 2])
+                holes.append(par + offset)
+            rounds[f"round_{r}_holes"] = holes
+        rounds["round_3_holes"] = [None] * 18
+        rounds["round_4_holes"] = [None] * 18
+        data[espn_id] = rounds
+    return data
+
+
 def get_espn_field():
     """Return a list of {espn_id, name} for all golfers in the current ESPN field."""
     data = fetch_leaderboard()

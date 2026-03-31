@@ -39,12 +39,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Close dropdowns and popovers when clicking outside
+    // Close dropdowns when clicking outside
     document.addEventListener("click", function () {
         document.querySelectorAll(".custom-dropdown.open").forEach(function (dd) {
             dd.classList.remove("open");
         });
-        closeOwnerPopover();
     });
 
     // ── Sortable table ──
@@ -67,7 +66,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     currentSort = key;
                     ascending = true;
                 }
-                // Clear arrows
                 headers.forEach(function (h) {
                     h.classList.remove("sort-asc", "sort-desc");
                 });
@@ -109,28 +107,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // ── Owner popover on scores page ──
-    var activePopover = null;
-
-    function closeOwnerPopover() {
-        if (activePopover) {
-            activePopover.remove();
-            activePopover = null;
-        }
-    }
-
     // ── Expandable leaderboard rows ──
     var expandableRows = document.querySelectorAll(".expandable-row");
     expandableRows.forEach(function (row) {
         row.addEventListener("click", function (e) {
-            // Don't toggle row when clicking ownership popover trigger
             if (e.target.closest(".owned-trigger")) return;
             e.stopPropagation();
-            closeOwnerPopover();
             var detailRow = row.nextElementSibling;
             if (!detailRow || !detailRow.classList.contains("detail-row")) return;
             var isOpen = row.classList.contains("expanded");
-            // Close all
             expandableRows.forEach(function (r) {
                 r.classList.remove("expanded");
                 var dr = r.nextElementSibling;
@@ -138,7 +123,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     dr.style.display = "none";
                 }
             });
-            // Toggle clicked
             if (!isOpen) {
                 row.classList.add("expanded");
                 detailRow.style.display = "";
@@ -166,25 +150,35 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // ── Ownership modal ──
+    var overlay = document.getElementById("owner-modal-overlay");
+    var modal = document.getElementById("owner-modal");
+
+    if (overlay) {
+        overlay.addEventListener("click", function (e) {
+            if (e.target === overlay) {
+                overlay.classList.remove("open");
+            }
+        });
+    }
+
     document.querySelectorAll(".owned-trigger").forEach(function (trigger) {
         trigger.addEventListener("click", function (e) {
             e.stopPropagation();
-            closeOwnerPopover();
+            if (!overlay || !modal) return;
             var owners = trigger.getAttribute("data-owners");
+            var golfer = trigger.getAttribute("data-golfer") || "";
+            var pct = trigger.getAttribute("data-pct") || "";
             if (!owners) return;
-            var pop = document.createElement("div");
-            pop.className = "owner-popover";
+
+            var html = '<div class="owner-modal-title">' + golfer + '</div>';
+            html += '<div class="owner-modal-pct">' + pct + '% owned</div>';
             var names = owners.split(", ");
             names.forEach(function (name) {
-                var div = document.createElement("div");
-                div.className = "owner-popover-name";
-                div.textContent = name;
-                pop.appendChild(div);
+                html += '<div class="owner-modal-name">' + name + '</div>';
             });
-            var cell = trigger.closest("td") || trigger.parentElement;
-            cell.style.position = "relative";
-            cell.appendChild(pop);
-            activePopover = pop;
+            modal.innerHTML = html;
+            overlay.classList.add("open");
         });
     });
 });

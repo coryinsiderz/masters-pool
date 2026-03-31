@@ -49,6 +49,10 @@
         {% block content %}{% endblock %}
     </main>
 
+    <div class="owner-modal-overlay" id="owner-modal-overlay">
+        <div class="owner-modal" id="owner-modal"></div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>

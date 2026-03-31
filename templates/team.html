@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Squad - Baltz Masters Pool{% endblock %}
+{% block title %}My Team{% endblock %}
 
 {% block content %}
 <div class="page-container">
@@ -21,7 +21,7 @@
         <div class="squad-card{% if card.counting %} counting{% endif %}">
             <div class="sc-tier">{{ card.tier_name }}</div>
             <div class="sc-main">
-                <div class="sc-name">{{ card.name }} <span class="sc-own owned-trigger" data-owners="{{ card.owners | map('display_name') | join(', ') }}">{{ card.ownership_pct }}%&nbsp;&nbsp;{{ card.ownership_count }}/{{ total_users }}</span></div>
+                <div class="sc-name">{{ card.name }} <span class="sc-own owned-trigger" data-owners="{{ card.owners | map('display_name') | join(', ') }}" data-golfer="{{ card.name }}" data-pct="{{ card.ownership_pct }}">{{ card.ownership_pct }}%</span></div>
                 <div class="sc-score" style="color:var(--augusta-gold)">{{ card.to_par or '--' }}</div>
             </div>
             <div class="sc-details">

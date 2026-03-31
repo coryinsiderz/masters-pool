@@ -1,12 +1,84 @@
 {% extends "base.html" %}
 
-{% block title %}What's Goin On at Augusta - Baltz Masters Pool{% endblock %}
+{% block title %}Tournament{% endblock %}
 
 {% block content %}
 <div class="page-container">
     <h1>What's Goin On at Augusta</h1>
 
     {% if scores %}
+    <div class="view-toggle" style="margin-bottom:1rem;display:flex;gap:0.5rem">
+        <a href="{{ url_for('scores.scores') }}" class="btn btn-small {% if view != 'board' %}view-active{% endif %}">Leaderboard</a>
+        <a href="{{ url_for('scores.scores', view='board') }}" class="btn btn-small {% if view == 'board' %}view-active{% endif %}">Traditional</a>
+    </div>
+
+    {% if view == 'board' %}
+    {# ── Augusta Traditional View ── #}
+    {% if has_hole_data %}
+    <div class="round-tabs" style="margin-bottom:0.75rem;display:flex;gap:0.25rem">
+        {% for r in range(1, 5) %}
+        <a href="{{ url_for('scores.scores', view='board', round=r) }}" class="btn btn-small {% if selected_round == r %}view-active{% endif %}">R{{ r }}</a>
+        {% endfor %}
+    </div>
+    <div class="leaderboard-scroll">
+    <table class="data-table augusta-board">
+        <thead>
+            <tr>
+                <th class="ab-sticky ab-sticky-score">Score</th>
+                <th class="ab-sticky ab-sticky-name">Player</th>
+                <th class="ab-sticky ab-sticky-own">Owned</th>
+                {% for h in range(1, 19) %}
+                <th class="hole-header">{{ h }}</th>
+                {% endfor %}
+                <th class="hole-header">Tot</th>
+            </tr>
+            <tr class="par-row">
+                <td class="ab-sticky ab-sticky-score"></td>
+                <td class="ab-sticky ab-sticky-name">Par</td>
+                <td class="ab-sticky ab-sticky-own"></td>
+                {% for p in par %}
+                <td class="hole-cell">{{ p }}</td>
+                {% endfor %}
+                <td class="hole-cell">{{ par | sum }}</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in scores %}
+            {% set sc = scorecard_data.get(s.espn_id|string, {}) %}
+            {% set round_key = 'round_' ~ selected_round ~ '_holes' %}
+            {% set holes = sc.get(round_key, []) %}
+            <tr{% if s.golfer_id in my_golfer_ids %} class="my-player"{% endif %}>
+                {% set tp = s.to_par or '' %}
+                <td class="ab-sticky ab-sticky-score {% if tp.startswith('-') %}ab-score-under{% else %}ab-score-over{% endif %}">{% if tp.startswith('-') %}{{ tp[1:] }}{% elif tp.startswith('+') %}{{ tp[1:] }}{% elif tp == 'E' %}0{% else %}{{ tp or '--' }}{% endif %}</td>
+                <td class="ab-sticky ab-sticky-name ab-player-name">{{ s.name.split(' ')[-1] }}</td>
+                <td class="ab-sticky ab-sticky-own">
+                    {% if s.ownership_count > 0 %}
+                    <span class="owned-trigger" data-owners="{{ s.owners | map('display_name') | join(', ') }}" data-golfer="{{ s.name }}" data-pct="{{ s.ownership_pct }}">{{ s.ownership_pct }}%</span>
+                    {% else %}-{% endif %}
+                </td>
+                {% set cum = namespace(val=0, has=false) %}
+                {% for i in range(18) %}
+                {% set strokes = holes[i] if holes and i < holes|length else none %}
+                {% if strokes is not none %}
+                {% set cum.val = cum.val + (strokes - par[i]) %}
+                {% set cum.has = true %}
+                <td class="hole-cell {% if cum.val < 0 %}ab-score-under{% else %}ab-score-over{% endif %}">{{ cum.val | abs }}</td>
+                {% else %}
+                <td class="hole-cell"></td>
+                {% endif %}
+                {% endfor %}
+                <td class="hole-cell {% if cum.has and cum.val < 0 %}ab-score-under{% else %}ab-score-over{% endif %}" style="font-weight:700">{% if cum.has %}{{ cum.val | abs }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="empty-state">Hole-by-hole scores available during play. <a href="{{ url_for('scores.scores') }}" style="color:var(--augusta-gold)">View leaderboard</a></p>
+    {% endif %}
+
+    {% else %}
+    {# ── Standard Leaderboard View ── #}
     <button class="btn btn-small scores-filter-toggle" id="scores-filter" style="margin-bottom:1rem">My Players</button>
     <div class="leaderboard-scroll">
     <table class="data-table leaderboard-table" id="scores-table">
@@ -31,7 +103,7 @@
                 <td>{{ s.name }}</td>
                 <td class="owned-cell">
                     {% if s.ownership_count > 0 %}
-                    <span class="owned-trigger" data-owners="{{ s.owners | map('display_name') | join(', ') }}">{{ s.ownership_pct }}%&nbsp;&nbsp;{{ s.ownership_count }}/{{ total_users }}</span>
+                    <span class="owned-trigger" data-owners="{{ s.owners | map('display_name') | join(', ') }}" data-golfer="{{ s.name }}" data-pct="{{ s.ownership_pct }}">{{ s.ownership_pct }}%</span>
                     {% else %}
                     <span class="owned-none">-</span>
                     {% endif %}
@@ -48,6 +120,8 @@
         </tbody>
     </table>
     </div>
+    {% endif %}
+
     {% else %}
     <p class="empty-state">Scores will appear once the tournament begins.</p>
     {% endif %}
