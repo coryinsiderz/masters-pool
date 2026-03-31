@@ -4,26 +4,41 @@
 
 {% block content %}
 <div class="page-container">
-    <h1>Live Tournament Scores</h1>
-    <table class="data-table">
+    <h1>{{ tournament.tournament_name if tournament else 'Tournament Scores' }}</h1>
+
+    {% if scores %}
+    <table class="data-table leaderboard-table">
         <thead>
             <tr>
-                <th>Pos</th>
-                <th>Player</th>
-                <th>To Par</th>
-                <th>Thru</th>
+                <th>POS</th>
+                <th>PLAYER</th>
+                <th>TO PAR</th>
+                <th>THRU</th>
                 <th>R1</th>
                 <th>R2</th>
                 <th>R3</th>
                 <th>R4</th>
-                <th>Total</th>
+                <th>TOTAL</th>
             </tr>
         </thead>
         <tbody>
+            {% for s in scores %}
             <tr>
-                <td colspan="9" class="empty-state">Scores will appear once the tournament begins.</td>
+                <td>{{ s.position if s.status == 'active' else '' }}</td>
+                <td>{{ s.name }}</td>
+                <td style="color:var(--augusta-gold);font-weight:700">{{ s.to_par or '--' }}</td>
+                <td>{% if s.status in ('MC', 'WD', 'DQ') %}{{ s.status }}{% else %}{{ s.thru or '--' }}{% endif %}</td>
+                <td>{{ s.round_1 or '--' }}</td>
+                <td>{{ s.round_2 or '--' }}</td>
+                <td>{{ s.round_3 or '--' }}</td>
+                <td>{{ s.round_4 or '--' }}</td>
+                <td>{{ s.total_strokes or '--' }}</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <p class="empty-state">Scores will appear once the tournament begins.</p>
+    {% endif %}
 </div>
 {% endblock %}

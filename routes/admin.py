@@ -148,3 +148,19 @@ def import_field():
     conn.close()
     flash(f"{imported} players imported from ESPN.", "success")
     return redirect(url_for("admin.admin"))
+
+
+@admin_bp.route("/admin/update-scores")
+def update_scores_route():
+    if not is_admin():
+        return "Forbidden", 403
+    from app import get_db_connection
+    from services.espn import update_scores
+    conn = get_db_connection()
+    success = update_scores(conn)
+    conn.close()
+    if success:
+        flash("Scores updated from ESPN.", "success")
+    else:
+        flash("Failed to update scores from ESPN.", "error")
+    return redirect(url_for("scores.scores"))
