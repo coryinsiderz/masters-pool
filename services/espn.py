@@ -148,53 +148,74 @@ def parse_leaderboard(data):
     return {"tournament": tournament, "golfers": golfers}
 
 
-def update_scores(conn):
-    """Fetch ESPN data and update tournament_state and golfer_scores tables."""
+def update_scores(conn=None):
+    """Fetch ESPN data and update tournament_state and golfer_scores tables.
+
+    If conn is None, creates and closes its own connection (for scheduler use).
+    If conn is provided, uses it without closing (for route use).
+    """
     from models.tournament import update_tournament_state, upsert_golfer_score
 
-    data = fetch_leaderboard()
-    parsed = parse_leaderboard(data)
-    if not parsed:
-        logger.error("No parsed data to update scores")
+    own_conn = False
+    if conn is None:
+        try:
+            from app import get_db_connection
+            conn = get_db_connection()
+            own_conn = True
+        except Exception as e:
+            logger.error("Failed to get DB connection for score update: %s", e)
+            return False
+
+    try:
+        data = fetch_leaderboard()
+        parsed = parse_leaderboard(data)
+        if not parsed:
+            logger.error("No parsed data to update scores")
+            return False
+
+        t = parsed["tournament"]
+        update_tournament_state(
+            conn,
+            tournament_name=t["name"],
+            espn_event_id=t["event_id"],
+            status=t["status"],
+            current_round=t["current_round"],
+            last_poll_at=datetime.now(timezone.utc),
+        )
+
+        # Get our golfers' ESPN IDs so we only update ones in our pool
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, espn_id FROM golfers WHERE espn_id IS NOT NULL")
+            our_golfers = {row[1]: row[0] for row in cur.fetchall()}
+
+        updated_count = 0
+        for golfer in parsed["golfers"]:
+            if golfer["espn_id"] in our_golfers:
+                golfer_id = our_golfers[golfer["espn_id"]]
+                upsert_golfer_score(
+                    conn,
+                    golfer_id,
+                    round_1=golfer["round_1"],
+                    round_2=golfer["round_2"],
+                    round_3=golfer["round_3"],
+                    round_4=golfer["round_4"],
+                    total_strokes=golfer["total_strokes"],
+                    to_par=golfer["to_par"],
+                    status=golfer["status"],
+                    position=golfer["position"],
+                    thru=golfer["thru"],
+                    current_round=golfer["current_round"],
+                )
+                updated_count += 1
+
+        logger.info("Updated scores for %d/%d pool golfers", updated_count, len(our_golfers))
+        return True
+    except Exception as e:
+        logger.error("Error updating scores: %s", e)
         return False
-
-    t = parsed["tournament"]
-    update_tournament_state(
-        conn,
-        tournament_name=t["name"],
-        espn_event_id=t["event_id"],
-        status=t["status"],
-        current_round=t["current_round"],
-        last_poll_at=datetime.now(timezone.utc),
-    )
-
-    # Get our golfers' ESPN IDs so we only update ones in our pool
-    with conn.cursor() as cur:
-        cur.execute("SELECT id, espn_id FROM golfers WHERE espn_id IS NOT NULL")
-        our_golfers = {row[1]: row[0] for row in cur.fetchall()}
-
-    updated_count = 0
-    for golfer in parsed["golfers"]:
-        if golfer["espn_id"] in our_golfers:
-            golfer_id = our_golfers[golfer["espn_id"]]
-            upsert_golfer_score(
-                conn,
-                golfer_id,
-                round_1=golfer["round_1"],
-                round_2=golfer["round_2"],
-                round_3=golfer["round_3"],
-                round_4=golfer["round_4"],
-                total_strokes=golfer["total_strokes"],
-                to_par=golfer["to_par"],
-                status=golfer["status"],
-                position=golfer["position"],
-                thru=golfer["thru"],
-                current_round=golfer["current_round"],
-            )
-            updated_count += 1
-
-    logger.info("Updated scores for %d/%d pool golfers", updated_count, len(our_golfers))
-    return True
+    finally:
+        if own_conn:
+            conn.close()
 
 
 def get_espn_field():

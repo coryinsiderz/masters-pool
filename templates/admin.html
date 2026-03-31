@@ -7,6 +7,25 @@
     <h1>Admin</h1>
 
     <section class="admin-section">
+        <h2>Polling</h2>
+        <div id="polling-status" style="margin-bottom:0.75rem;font-size:0.85rem;color:var(--augusta-cream)">Loading...</div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <form method="POST" action="{{ url_for('admin.set_poll_interval') }}" style="display:inline">
+                <input type="hidden" name="interval" value="60">
+                <button type="submit" class="btn btn-small poll-btn" data-interval="60">1 Min</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.set_poll_interval') }}" style="display:inline">
+                <input type="hidden" name="interval" value="300">
+                <button type="submit" class="btn btn-small poll-btn" data-interval="300">5 Min</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.set_poll_interval') }}" style="display:inline">
+                <input type="hidden" name="interval" value="7500">
+                <button type="submit" class="btn btn-small poll-btn" data-interval="7500">Off</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="admin-section">
         <h2>Import from ESPN</h2>
         <form method="POST" action="{{ url_for('admin.import_field') }}">
             <button type="submit" class="btn btn-primary">Import ESPN Field</button>
@@ -98,4 +117,30 @@
         </form>
     </details>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    fetch("{{ url_for('admin.polling_status') }}")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var el = document.getElementById("polling-status");
+            var status = data.running ? "Running" : "Stopped";
+            var intervalLabel = {60: "1 min", 300: "5 min", 7500: "Off"}[data.interval] || data.interval + "s";
+            var lastPoll = data.last_poll_at ? new Date(data.last_poll_at).toLocaleString() : "Never";
+            el.textContent = status + " / " + intervalLabel + " / Last poll: " + lastPoll;
+            document.querySelectorAll(".poll-btn").forEach(function(btn) {
+                var btnInterval = parseInt(btn.getAttribute("data-interval"));
+                if (btnInterval === data.interval) {
+                    btn.style.background = "var(--augusta-gold)";
+                    btn.style.color = "var(--augusta-dark)";
+                }
+            });
+        })
+        .catch(function() {
+            document.getElementById("polling-status").textContent = "Could not fetch polling status";
+        });
+})();
+</script>
 {% endblock %}

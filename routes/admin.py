@@ -230,3 +230,45 @@ def create_test_users():
     conn.close()
     flash(f"{tier_msg} Created {created} users with {picked} picks.", "success")
     return redirect(url_for("admin.admin"))
+
+
+@admin_bp.route("/admin/polling-status")
+def polling_status():
+    if not is_admin():
+        return "Forbidden", 403
+    from app import scheduler, get_db_connection
+    from models.tournament import get_tournament_state
+
+    interval = 0
+    running = False
+    if scheduler and scheduler.running:
+        running = True
+        job = scheduler.get_job("espn_poll")
+        if job and job.trigger:
+            interval = int(job.trigger.interval.total_seconds())
+
+    conn = get_db_connection()
+    state = get_tournament_state(conn)
+    conn.close()
+    last_poll = state["last_poll_at"].isoformat() if state and state.get("last_poll_at") else None
+
+    return jsonify({
+        "running": running,
+        "interval": interval,
+        "last_poll_at": last_poll,
+    })
+
+
+@admin_bp.route("/admin/set-poll-interval", methods=["POST"])
+def set_poll_interval():
+    if not is_admin():
+        return "Forbidden", 403
+    from app import start_scheduler
+
+    interval = int(request.form.get("interval", 300))
+    if interval not in (60, 300, 7500):
+        interval = 300
+    start_scheduler(interval)
+    label = {60: "1 min", 300: "5 min", 7500: "Off"}.get(interval, f"{interval}s")
+    flash(f"Polling interval set to {label}.", "success")
+    return redirect(url_for("admin.admin"))

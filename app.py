@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -10,16 +11,65 @@ from config import Config
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = Config.SECRET_KEY
 app.permanent_session_lifetime = timedelta(days=30)
+
+# Scheduler instance (accessible to admin routes)
+scheduler = None
 
 
 def get_db_connection():
     conn = psycopg2.connect(Config.DATABASE_URL)
     conn.autocommit = True
     return conn
+
+
+def _poll_job():
+    """Background job that calls update_scores with its own connection."""
+    from services.espn import update_scores
+    logger.info("Scheduler polling ESPN at %s", datetime.now(timezone.utc).isoformat())
+    success = update_scores()
+    logger.info("Scheduler poll %s", "succeeded" if success else "failed")
+
+
+def _should_start_scheduler():
+    """Determine if we should start the scheduler in this process."""
+    if Config.ENABLE_POLLING != "1":
+        return False
+    # In Flask debug mode, the reloader spawns two processes.
+    # Only start in the main (reloader) process, identified by WERKZEUG_RUN_MAIN.
+    if os.environ.get("FLASK_DEBUG") == "1" or app.debug:
+        return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+    # Under gunicorn or direct run without debug, always start.
+    return True
+
+
+def start_scheduler(interval=None):
+    """Start or restart the background scheduler."""
+    global scheduler
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    if interval is None:
+        interval = Config.ESPN_POLL_INTERVAL
+
+    if scheduler and scheduler.running:
+        scheduler.shutdown(wait=False)
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        _poll_job,
+        "interval",
+        seconds=interval,
+        id="espn_poll",
+        replace_existing=True,
+    )
+    scheduler.start()
+    logger.info("Scheduler started with %d second interval", interval)
 
 
 @app.before_request
@@ -59,7 +109,6 @@ def format_display_name(username):
     if len(parts) == 1:
         return parts[0].capitalize()
     if len(parts) == 2:
-        # Check if already "First L." format
         if len(parts[1]) == 2 and parts[1].endswith("."):
             return f"{parts[0].capitalize()} {parts[1].upper()}"
         return f"{parts[0].capitalize()} {parts[1][0].upper()}."
@@ -87,6 +136,10 @@ app.register_blueprint(leaderboard_bp)
 app.register_blueprint(scores_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(team_bp)
+
+# Start scheduler if appropriate
+if _should_start_scheduler():
+    start_scheduler()
 
 
 if __name__ == "__main__":

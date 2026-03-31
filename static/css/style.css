@@ -446,6 +446,15 @@ input:-webkit-autofill:focus {
     white-space: nowrap;
 }
 
+.poll-btn {
+    background: var(--augusta-green);
+    color: var(--augusta-cream);
+}
+
+.poll-btn:hover {
+    background: var(--augusta-dark);
+}
+
 
 /* ── Flash messages ── */
 
