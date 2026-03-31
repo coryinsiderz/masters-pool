@@ -51,6 +51,24 @@ def inject_globals():
     }
 
 
+def format_display_name(username):
+    """Format username for display: 'cory' -> 'Cory', 'cory baltz' -> 'Cory B.'"""
+    if not username:
+        return ""
+    parts = username.strip().split()
+    if len(parts) == 1:
+        return parts[0].capitalize()
+    if len(parts) == 2:
+        # Check if already "First L." format
+        if len(parts[1]) == 2 and parts[1].endswith("."):
+            return f"{parts[0].capitalize()} {parts[1].upper()}"
+        return f"{parts[0].capitalize()} {parts[1][0].upper()}."
+    return parts[0].capitalize() + " " + parts[1][0].upper() + "."
+
+
+app.jinja_env.filters["display_name"] = format_display_name
+
+
 @app.route("/health")
 def health():
     return "OK", 200
@@ -72,4 +90,4 @@ app.register_blueprint(team_bp)
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8888)
+    app.run(host='0.0.0.0', port=8888, debug=True)

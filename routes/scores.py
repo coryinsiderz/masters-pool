@@ -1,3 +1,4 @@
+import psycopg2.extras
 from flask import Blueprint, g, redirect, render_template, url_for
 
 from models.tournament import get_all_scores, get_tournament_state
@@ -13,9 +14,39 @@ def scores():
     conn = get_db_connection()
     tournament = get_tournament_state(conn)
     all_scores = get_all_scores(conn)
+
+    # Get ownership data
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT COUNT(DISTINCT user_id) AS cnt FROM picks")
+        total_users = cur.fetchone()["cnt"]
+        cur.execute(
+            """SELECT p.golfer_id, u.username
+               FROM picks p
+               JOIN users u ON p.user_id = u.id
+               ORDER BY p.golfer_id, u.username"""
+        )
+        owner_rows = cur.fetchall()
+
     conn.close()
 
-    # Split into active and cut/withdrawn, sort active by position
+    # Build ownership map: golfer_id -> {count, owners}
+    ownership = {}
+    for row in owner_rows:
+        gid = row["golfer_id"]
+        if gid not in ownership:
+            ownership[gid] = {"count": 0, "owners": []}
+        ownership[gid]["count"] += 1
+        ownership[gid]["owners"].append(row["username"])
+
+    # Attach ownership to each score
+    for s in all_scores:
+        gid = s.get("golfer_id")
+        own = ownership.get(gid, {"count": 0, "owners": []})
+        s["ownership_count"] = own["count"]
+        s["ownership_pct"] = round(own["count"] / total_users * 100) if total_users else 0
+        s["owners"] = own["owners"]
+
+    # Split into active and cut/withdrawn
     active = []
     cut = []
     for s in all_scores:
@@ -28,11 +59,15 @@ def scores():
     cut.sort(key=lambda s: s.get("name", ""))
 
     scores_list = active + cut
-    return render_template("scores.html", scores=scores_list, tournament=tournament)
+    return render_template(
+        "scores.html",
+        scores=scores_list,
+        tournament=tournament,
+        total_users=total_users,
+    )
 
 
 def _parse_position(pos):
-    """Parse position string to int for sorting. T5 -> 5, etc."""
     if not pos:
         return 9999
     try:

@@ -7,11 +7,13 @@
     <h1>What's Goin On at Augusta</h1>
 
     {% if scores %}
+    <div class="leaderboard-scroll">
     <table class="data-table leaderboard-table">
         <thead>
             <tr>
                 <th>POS</th>
                 <th>PLAYER</th>
+                <th>OWNED</th>
                 <th>TO PAR</th>
                 <th>THRU</th>
                 <th>R1</th>
@@ -26,6 +28,13 @@
             <tr>
                 <td>{{ s.position if s.status == 'active' else '' }}</td>
                 <td>{{ s.name }}</td>
+                <td class="owned-cell">
+                    {% if s.ownership_count > 0 %}
+                    <span class="owned-trigger" data-owners="{{ s.owners | map('display_name') | join(', ') }}">{{ s.ownership_pct }}%&nbsp;&nbsp;{{ s.ownership_count }}/{{ total_users }}</span>
+                    {% else %}
+                    <span class="owned-none">-</span>
+                    {% endif %}
+                </td>
                 <td style="color:var(--augusta-gold);font-weight:700">{{ s.to_par or '--' }}</td>
                 <td>{% if s.status in ('MC', 'WD', 'DQ') %}{{ s.status }}{% else %}{{ s.thru or '--' }}{% endif %}</td>
                 <td>{{ s.round_1 or '--' }}</td>
@@ -37,6 +46,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <p class="empty-state">Scores will appear once the tournament begins.</p>
     {% endif %}
