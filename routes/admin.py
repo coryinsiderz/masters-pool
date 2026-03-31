@@ -164,3 +164,21 @@ def update_scores_route():
     else:
         flash("Failed to update scores from ESPN.", "error")
     return redirect(url_for("scores.scores"))
+
+
+@admin_bp.route("/admin/bulk-tier-update", methods=["POST"])
+def bulk_tier_update():
+    if not is_admin():
+        return "Forbidden", 403
+    from app import get_db_connection
+    conn = get_db_connection()
+    updated = 0
+    for key, value in request.form.items():
+        if key.startswith("tier_"):
+            golfer_id = int(key.split("_", 1)[1])
+            new_tier = int(value)
+            update_golfer(conn, golfer_id, tier=new_tier)
+            updated += 1
+    conn.close()
+    flash(f"{updated} tier assignments saved.", "success")
+    return redirect(url_for("admin.admin"))
