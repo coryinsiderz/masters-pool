@@ -27,6 +27,14 @@ def scores():
         )
         owner_rows = cur.fetchall()
 
+    # Get current user's picked golfer IDs
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT golfer_id FROM picks WHERE user_id = %s",
+            (g.current_user["id"],),
+        )
+        my_golfer_ids = {row[0] for row in cur.fetchall()}
+
     conn.close()
 
     # Build ownership map: golfer_id -> {count, owners}
@@ -64,6 +72,7 @@ def scores():
         scores=scores_list,
         tournament=tournament,
         total_users=total_users,
+        my_golfer_ids=my_golfer_ids,
     )
 
 

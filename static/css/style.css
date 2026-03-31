@@ -496,8 +496,8 @@ input:-webkit-autofill:focus {
     padding: 1rem 1.25rem;
 }
 
-.squad-card-cut {
-    opacity: 0.55;
+.squad-card.counting {
+    border-left: 3px solid var(--augusta-gold);
 }
 
 .sc-tier {
@@ -532,6 +532,7 @@ input:-webkit-autofill:focus {
 .sc-score {
     font-size: 1.25rem;
     font-weight: 700;
+    color: var(--augusta-gold) !important;
 }
 
 .sc-details {
@@ -740,6 +741,7 @@ input:-webkit-autofill:focus {
 .mc-score {
     font-size: 0.8rem;
     font-weight: 700;
+    color: var(--augusta-gold) !important;
 }
 
 .mc-thru {
@@ -773,6 +775,27 @@ input:-webkit-autofill:focus {
 .owned-none {
     color: rgba(255, 248, 231, 0.3);
 }
+
+/* ── My player highlight ── */
+
+.my-player td {
+    border-left-color: var(--augusta-gold);
+    background: rgba(200, 169, 81, 0.08);
+}
+
+.my-player td:first-child {
+    border-left: 3px solid var(--augusta-gold);
+}
+
+.scores-filter-toggle {
+    background: var(--augusta-green);
+    color: var(--augusta-cream);
+}
+
+.scores-filter-toggle:hover {
+    background: var(--augusta-dark);
+}
+
 
 .owner-popover {
     position: absolute;

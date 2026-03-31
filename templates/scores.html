@@ -7,8 +7,9 @@
     <h1>What's Goin On at Augusta</h1>
 
     {% if scores %}
+    <button class="btn btn-small scores-filter-toggle" id="scores-filter" style="margin-bottom:1rem">My Players</button>
     <div class="leaderboard-scroll">
-    <table class="data-table leaderboard-table">
+    <table class="data-table leaderboard-table" id="scores-table">
         <thead>
             <tr>
                 <th>POS</th>
@@ -25,7 +26,7 @@
         </thead>
         <tbody>
             {% for s in scores %}
-            <tr>
+            <tr{% if s.golfer_id in my_golfer_ids %} class="my-player"{% endif %}>
                 <td>{{ s.position if s.status == 'active' else '' }}</td>
                 <td>{{ s.name }}</td>
                 <td class="owned-cell">

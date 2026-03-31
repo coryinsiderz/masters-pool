@@ -119,6 +119,26 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // ── Scores filter toggle ──
+    var filterBtn = document.getElementById("scores-filter");
+    if (filterBtn) {
+        var filtered = false;
+        filterBtn.addEventListener("click", function () {
+            var table = document.getElementById("scores-table");
+            if (!table) return;
+            filtered = !filtered;
+            var rows = table.querySelectorAll("tbody tr");
+            rows.forEach(function (row) {
+                if (filtered && !row.classList.contains("my-player")) {
+                    row.style.display = "none";
+                } else {
+                    row.style.display = "";
+                }
+            });
+            filterBtn.textContent = filtered ? "All Players" : "My Players";
+        });
+    }
+
     document.querySelectorAll(".owned-trigger").forEach(function (trigger) {
         trigger.addEventListener("click", function (e) {
             e.stopPropagation();
@@ -134,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 div.textContent = name;
                 pop.appendChild(div);
             });
-            var cell = trigger.closest("td");
+            var cell = trigger.closest("td") || trigger.parentElement;
             cell.style.position = "relative";
             cell.appendChild(pop);
             activePopover = pop;

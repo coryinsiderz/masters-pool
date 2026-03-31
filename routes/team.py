@@ -37,8 +37,19 @@ def team():
                 (golfer_ids,),
             )
             ownership = {r["golfer_id"]: r["cnt"] for r in cur.fetchall()}
+            cur.execute(
+                """SELECT p.golfer_id, u.username
+                   FROM picks p JOIN users u ON p.user_id = u.id
+                   WHERE p.golfer_id = ANY(%s)
+                   ORDER BY u.username""",
+                (golfer_ids,),
+            )
+            owner_names = {}
+            for r in cur.fetchall():
+                owner_names.setdefault(r["golfer_id"], []).append(r["username"])
         else:
             ownership = {}
+            owner_names = {}
     conn.close()
 
     scores_by_id = {s["golfer_id"]: s for s in scores}
@@ -56,6 +67,7 @@ def team():
             "name": pick["golfer_name"],
             "ownership_pct": own_pct,
             "ownership_count": own_count,
+            "owners": owner_names.get(gid, []),
             "to_par": score.get("to_par", ""),
             "total_strokes": score.get("total_strokes"),
             "position": score.get("position", ""),
@@ -67,8 +79,9 @@ def team():
             "round_4": score.get("round_4"),
         })
 
-    # Calculate team to-par (best 4 of 6)
+    # Calculate team to-par and mark counting golfers
     team_to_par = _calc_team_to_par(cards)
+    _mark_counting(cards)
 
     return render_template(
         "team.html",
@@ -77,6 +90,19 @@ def team():
         has_picks=len(picks) > 0,
         total_users=total_users,
     )
+
+
+def _mark_counting(cards):
+    """Mark the best 4 of 6 cards as counting based on total_strokes."""
+    scored = []
+    for i, c in enumerate(cards):
+        ts = c.get("total_strokes")
+        scored.append((i, ts))
+    # Sort by total_strokes ascending, None to end
+    scored.sort(key=lambda x: (x[1] is None, x[1] or 0))
+    counting_indices = {scored[j][0] for j in range(min(4, len(scored))) if scored[j][1] is not None}
+    for i, c in enumerate(cards):
+        c["counting"] = i in counting_indices
 
 
 def _calc_team_to_par(cards):

@@ -18,10 +18,10 @@
     {% if has_picks %}
     <div class="squad-cards">
         {% for card in cards %}
-        <div class="squad-card{% if card.status in ('MC','WD','DQ') %} squad-card-cut{% endif %}">
+        <div class="squad-card{% if card.counting %} counting{% endif %}">
             <div class="sc-tier">{{ card.tier_name }}</div>
             <div class="sc-main">
-                <div class="sc-name">{{ card.name }} <span class="sc-own">{{ card.ownership_pct }}%&nbsp;&nbsp;{{ card.ownership_count }}/{{ total_users }}</span></div>
+                <div class="sc-name">{{ card.name }} <span class="sc-own owned-trigger" data-owners="{{ card.owners | map('display_name') | join(', ') }}">{{ card.ownership_pct }}%&nbsp;&nbsp;{{ card.ownership_count }}/{{ total_users }}</span></div>
                 <div class="sc-score" style="color:var(--augusta-gold)">{{ card.to_par or '--' }}</div>
             </div>
             <div class="sc-details">
