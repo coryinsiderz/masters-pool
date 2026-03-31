@@ -8,7 +8,7 @@
     <form method="POST" action="{{ url_for('auth.register') }}">
         <div class="form-group">
             <label for="username">Name</label>
-            <input type="text" id="username" name="username" placeholder="First L." required autocomplete="username">
+            <input type="text" id="username" name="username" placeholder="Your leaderboard name and login" required autocomplete="username">
         </div>
         <div class="form-group">
             <label for="password">Password</label>
@@ -16,11 +16,11 @@
         </div>
         <div class="form-group">
             <label for="confirm_password">Confirm Password</label>
-            <input type="password" id="confirm_password" name="confirm_password" placeholder="Please remember" required autocomplete="new-password">
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Please remember the above" required autocomplete="new-password">
         </div>
         <div class="form-group">
             <label for="recovery_contact">Recovery</label>
-            <input type="text" id="recovery_contact" name="recovery_contact" placeholder="PIN aka second password" autocomplete="off">
+            <input type="text" id="recovery_contact" name="recovery_contact" placeholder="PIN if you don't remember the above" autocomplete="off">
         </div>
         <button type="submit" class="btn btn-primary">Register</button>
     </form>
