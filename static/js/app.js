@@ -130,23 +130,25 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ── Scores filter toggle ──
-    var filterBtn = document.getElementById("scores-filter");
-    if (filterBtn) {
-        var filtered = false;
-        filterBtn.addEventListener("click", function () {
-            var table = document.getElementById("scores-table");
-            if (!table) return;
-            filtered = !filtered;
-            var rows = table.querySelectorAll("tbody tr");
-            rows.forEach(function (row) {
-                if (filtered && !row.classList.contains("my-player")) {
-                    row.style.display = "none";
-                } else {
-                    row.style.display = "";
-                }
+    // ── Scores player filter ──
+    var scoresFilters = document.querySelectorAll(".scores-player-filter");
+    if (scoresFilters.length) {
+        scoresFilters.forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                scoresFilters.forEach(function (b) { b.classList.remove("active"); });
+                btn.classList.add("active");
+                var filter = btn.getAttribute("data-filter");
+                var table = document.getElementById("scores-table");
+                if (!table) return;
+                var rows = table.querySelectorAll("tbody tr");
+                rows.forEach(function (row) {
+                    if (filter === "mine" && !row.classList.contains("my-player")) {
+                        row.style.display = "none";
+                    } else {
+                        row.style.display = "";
+                    }
+                });
             });
-            filterBtn.textContent = filtered ? "All Players" : "My Players";
         });
     }
 

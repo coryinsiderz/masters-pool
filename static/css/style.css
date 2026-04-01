@@ -446,14 +446,6 @@ input:-webkit-autofill:focus {
     white-space: nowrap;
 }
 
-.poll-btn {
-    background: var(--augusta-green);
-    color: var(--augusta-cream);
-}
-
-.poll-btn:hover {
-    background: var(--augusta-dark);
-}
 
 
 /* ── Flash messages ── */
@@ -803,14 +795,6 @@ input:-webkit-autofill:focus {
     border-left: 3px solid var(--augusta-gold);
 }
 
-.scores-filter-toggle {
-    background: var(--augusta-green);
-    color: var(--augusta-cream);
-}
-
-.scores-filter-toggle:hover {
-    background: var(--augusta-dark);
-}
 
 
 /* ── Ownership modal ── */
@@ -910,26 +894,66 @@ input:-webkit-autofill:focus {
 }
 
 
-/* ── View toggle ── */
+/* ── Tab buttons (text-only tabs) ── */
 
-.view-toggle a,
-.round-tabs a {
-    background: rgba(0, 20, 12, 0.75);
+.tab-btn {
+    background: none;
     color: var(--augusta-cream);
+    padding: 6px 14px;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    outline: none;
+    box-shadow: none;
     text-decoration: none;
     display: inline-block;
+    transition: color 0.15s;
 }
 
-.view-toggle a:hover,
-.round-tabs a:hover {
-    background: rgba(0, 40, 25, 0.85);
-    color: var(--augusta-cream);
+.tab-btn:hover {
+    color: var(--augusta-gold);
 }
 
-.view-active {
-    background: rgba(0, 20, 12, 0.75) !important;
-    color: var(--augusta-gold) !important;
+.tab-btn.active {
+    color: var(--augusta-gold);
     border-bottom: 2px solid var(--augusta-gold);
+}
+
+/* ── Filter buttons (solid action buttons) ── */
+
+.filter-btn {
+    background: var(--augusta-green);
+    color: var(--augusta-cream);
+    padding: 8px 16px;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s, color 0.15s;
+}
+
+.filter-btn:hover {
+    background: var(--augusta-dark);
+}
+
+.filter-btn.active {
+    background: var(--augusta-gold);
+    color: var(--augusta-dark);
+}
+
+/* ── Toggle row layout ── */
+
+.toggle-row {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
 }
 
 

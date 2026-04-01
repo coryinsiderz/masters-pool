@@ -129,6 +129,7 @@ from routes.leaderboard import leaderboard_bp
 from routes.scores import scores_bp
 from routes.admin import admin_bp
 from routes.team import team_bp
+from routes.exposure import exposure_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(picks_bp)
@@ -136,6 +137,7 @@ app.register_blueprint(leaderboard_bp)
 app.register_blueprint(scores_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(team_bp)
+app.register_blueprint(exposure_bp)
 
 # Start scheduler if appropriate
 if _should_start_scheduler():
