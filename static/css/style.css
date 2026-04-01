@@ -897,23 +897,18 @@ input:-webkit-autofill:focus {
 /* ── Tab buttons (text-only tabs) ── */
 
 .tab-btn {
-    background: none;
-    color: var(--augusta-cream);
-    padding: 6px 14px;
-    font-family: 'Libre Baskerville', Georgia, serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: 0.75rem;
-    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.75rem;
+    color: var(--augusta-gold);
+    background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    outline: none;
-    box-shadow: none;
     text-decoration: none;
     display: inline-block;
-    transition: color 0.15s;
-}
-
-.tab-btn:hover {
-    color: var(--augusta-gold);
+    cursor: pointer;
 }
 
 .tab-btn.active {
@@ -1044,19 +1039,27 @@ input:-webkit-autofill:focus {
 
 .ab-sticky-score {
     left: 0;
-    min-width: 45px;
+    width: 40px;
+    min-width: 40px;
+    z-index: 12;
 }
 
 .ab-sticky-name {
-    left: 45px;
+    left: 40px;
+    width: 90px;
     min-width: 90px;
+    z-index: 11;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ab-sticky-own {
-    left: 135px;
-    min-width: 40px;
+    left: 130px;
+    width: 45px;
+    min-width: 45px;
     color: #666;
     font-size: 0.7rem;
+    z-index: 10;
 }
 
 .augusta-board thead .ab-sticky {
@@ -1066,6 +1069,10 @@ input:-webkit-autofill:focus {
 
 .augusta-board .par-row .ab-sticky {
     background: #ece7d5;
+}
+
+.augusta-board tbody .ab-sticky {
+    background: #f5f0e1;
 }
 
 .augusta-board .my-player td {
@@ -1197,6 +1204,41 @@ input:-webkit-autofill:focus {
 
     .mc-own {
         font-size: 0.6rem;
+    }
+
+    /* Augusta board mobile */
+    .augusta-board {
+        font-size: 0.7rem;
+    }
+
+    .augusta-board .ab-sticky-score {
+        left: 0;
+        width: 40px;
+        min-width: 40px;
+    }
+
+    .augusta-board .ab-sticky-name {
+        left: 40px;
+        width: 90px;
+        min-width: 90px;
+        font-size: 0.7rem;
+    }
+
+    .augusta-board .ab-sticky-own {
+        left: 130px;
+        width: 45px;
+        min-width: 45px;
+        font-size: 0.6rem;
+    }
+
+    .hole-cell {
+        min-width: 24px;
+        font-size: 0.7rem;
+        padding: 0.2rem;
+    }
+
+    .hole-header {
+        min-width: 24px;
     }
 }
 
