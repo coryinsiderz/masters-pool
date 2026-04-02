@@ -25,14 +25,22 @@
                 <div class="sc-score" style="color:var(--augusta-gold)">{{ card.to_par or '--' }}</div>
             </div>
             <div class="sc-details">
-                <span class="sc-pos">{% if card.status in ('MC','WD','DQ') %}{{ card.status }}{% elif card.position %}{{ card.position }}{% else %}--{% endif %}</span>
-                <span class="sc-thru">{% if card.status in ('MC','WD','DQ') %}{% elif card.thru %}Thru {{ card.thru }}{% endif %}</span>
+                <span class="sc-pos" style="color:var(--augusta-gold)">{% if card.status in ('MC','WD','DQ') %}{{ card.status }}{% elif card.position %}{{ card.position|ordinal }}{% else %}--{% endif %}</span>
+                <span class="sc-thru">{% if card.status in ('MC','WD','DQ') %}{% elif card.thru and card.thru != 'F' %}Thru {{ card.thru }}{% endif %}</span>
             </div>
             <div class="sc-rounds">
-                <span>R1: {{ card.round_1 or '--' }}</span>
-                <span>R2: {{ card.round_2 or '--' }}</span>
-                <span>R3: {{ card.round_3 or '--' }}</span>
-                <span>R4: {{ card.round_4 or '--' }}</span>
+                {% for r in [1, 2, 3, 4] %}
+                {% set score = card['round_' ~ r] %}
+                {% if r == current_round and card.status == 'active' and score %}
+                <span>R{{ r }}: {{ card.to_par or '--' }}{% if card.thru and card.thru != 'F' %} Thru {{ card.thru }}{% endif %}</span>
+                {% elif r < current_round and score %}
+                <span>R{{ r }}: {{ score }}</span>
+                {% elif r > current_round or not score %}
+                <span>R{{ r }}: --</span>
+                {% else %}
+                <span>R{{ r }}: {{ score }}</span>
+                {% endif %}
+                {% endfor %}
             </div>
         </div>
         {% endfor %}

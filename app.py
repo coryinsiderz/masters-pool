@@ -118,6 +118,26 @@ def format_display_name(username):
 app.jinja_env.filters["display_name"] = format_display_name
 
 
+def format_ordinal(value):
+    """Convert position to ordinal: 1 -> '1st', 2 -> '2nd', 11 -> '11th', etc."""
+    if not value:
+        return ""
+    s = str(value).lstrip("T").strip()
+    try:
+        n = int(s)
+    except (ValueError, TypeError):
+        return str(value)
+    if 11 <= n % 100 <= 13:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    tied = "T" if str(value).startswith("T") else ""
+    return f"{tied}{n}{suffix}"
+
+
+app.jinja_env.filters["ordinal"] = format_ordinal
+
+
 @app.route("/health")
 def health():
     return "OK", 200

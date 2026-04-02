@@ -34,8 +34,11 @@
 
     <section class="admin-section">
         <h2>Test Data</h2>
-        <form method="POST" action="{{ url_for('admin.create_test_users') }}">
+        <form method="POST" action="{{ url_for('admin.create_test_users') }}" style="margin-bottom:0.75rem">
             <button type="submit" class="btn btn-primary">Create Test Users</button>
+        </form>
+        <form method="POST" action="{{ url_for('admin.reset_for_testing') }}">
+            <button type="submit" class="btn btn-danger">Reset for Valero Testing</button>
         </form>
     </section>
 

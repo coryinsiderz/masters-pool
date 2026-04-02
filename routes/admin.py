@@ -272,3 +272,84 @@ def set_poll_interval():
     label = {60: "1 min", 300: "5 min", 7500: "Off"}.get(interval, f"{interval}s")
     flash(f"Polling interval set to {label}.", "success")
     return redirect(url_for("admin.admin"))
+
+
+@admin_bp.route("/admin/reset-for-testing", methods=["POST"])
+def reset_for_testing():
+    """Temporary route for Valero testing. Delete before go-live."""
+    if not is_admin():
+        return "Forbidden", 403
+    import random
+    from app import get_db_connection
+    from config import Config
+    from models.user import create_user, get_user_by_username
+    from models.pick import set_pick
+    from services.espn import get_espn_field, update_scores
+
+    conn = get_db_connection()
+
+    # 1-4: Clean slate (keep admin user)
+    with conn.cursor() as cur:
+        cur.execute("DELETE FROM golfer_scores")
+        cur.execute("DELETE FROM picks")
+        cur.execute("DELETE FROM golfers")
+        cur.execute("DELETE FROM users WHERE LOWER(username) != LOWER(%s)", (Config.ADMIN_USERNAME,))
+
+    # 5-6: Import ESPN field
+    field = get_espn_field()
+    if not field:
+        conn.close()
+        flash("Failed to fetch ESPN field.", "error")
+        return redirect(url_for("admin.admin"))
+
+    with conn.cursor() as cur:
+        for player in field:
+            cur.execute(
+                "INSERT INTO golfers (name, tier, espn_id) VALUES (%s, %s, %s)",
+                (player["name"], 1, player["espn_id"]),
+            )
+
+    # 7: Distribute across tiers
+    with conn.cursor() as cur:
+        cur.execute("SELECT id FROM golfers ORDER BY name")
+        all_ids = [r[0] for r in cur.fetchall()]
+    for i, gid in enumerate(all_ids):
+        tier = (i % 6) + 1
+        update_golfer(conn, gid, tier=tier)
+
+    # 8-9: Create 24 test users with random picks
+    test_names = [
+        "Alice", "Bob", "Charles", "David", "Evan", "Frank",
+        "Grace", "Henry", "Iris", "Jack", "Kate", "Leo",
+        "Mia", "Noah", "Olivia", "Pete", "Quinn", "Rosa",
+        "Sam", "Tina", "Uma", "Vince", "Wendy", "Xavier",
+    ]
+    users_created = 0
+    picks_created = 0
+    for name in test_names:
+        existing = get_user_by_username(conn, name)
+        if existing:
+            continue
+        user = create_user(conn, name, "test123")
+        users_created += 1
+        for tier_num in range(1, 7):
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id FROM golfers WHERE tier = %s ORDER BY RANDOM() LIMIT 1",
+                    (tier_num,),
+                )
+                row = cur.fetchone()
+                if row:
+                    set_pick(conn, user["id"], tier_num, row[0])
+                    picks_created += 1
+
+    # 10: Pull scores
+    update_scores(conn)
+    conn.close()
+
+    flash(
+        f"Reset complete: {len(field)} golfers imported, {users_created} users created, "
+        f"{picks_created} picks assigned, scores updated.",
+        "success",
+    )
+    return redirect(url_for("admin.admin"))

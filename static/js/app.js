@@ -107,29 +107,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // ── Expandable leaderboard rows ──
-    var expandableRows = document.querySelectorAll(".expandable-row");
-    expandableRows.forEach(function (row) {
-        row.addEventListener("click", function (e) {
-            if (e.target.closest(".owned-trigger")) return;
-            e.stopPropagation();
-            var detailRow = row.nextElementSibling;
-            if (!detailRow || !detailRow.classList.contains("detail-row")) return;
-            var isOpen = row.classList.contains("expanded");
-            expandableRows.forEach(function (r) {
-                r.classList.remove("expanded");
-                var dr = r.nextElementSibling;
-                if (dr && dr.classList.contains("detail-row")) {
-                    dr.style.display = "none";
-                }
-            });
-            if (!isOpen) {
-                row.classList.add("expanded");
-                detailRow.style.display = "";
-            }
-        });
-    });
-
     // ── Scores player filter ──
     var scoresFilters = document.querySelectorAll(".scores-player-filter");
     if (scoresFilters.length) {

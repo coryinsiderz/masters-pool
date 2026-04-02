@@ -2,7 +2,7 @@ import psycopg2.extras
 from flask import Blueprint, g, redirect, render_template, url_for
 
 from models.pick import get_picks_for_user
-from models.tournament import get_scores_for_golfers
+from models.tournament import get_scores_for_golfers, get_tournament_state
 
 team_bp = Blueprint("team", __name__)
 
@@ -26,6 +26,8 @@ def team():
     picks = get_picks_for_user(conn, g.current_user["id"])
     golfer_ids = [p["golfer_id"] for p in picks]
     scores = get_scores_for_golfers(conn, golfer_ids) if golfer_ids else []
+    tournament = get_tournament_state(conn)
+    current_round = tournament.get("current_round", 0) if tournament else 0
 
     # Get ownership data
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -89,6 +91,7 @@ def team():
         team_to_par=team_to_par,
         has_picks=len(picks) > 0,
         total_users=total_users,
+        current_round=current_round,
     )
 
 
