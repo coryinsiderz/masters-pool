@@ -101,6 +101,7 @@ def parse_leaderboard(data):
         # Round scores from linescores
         linescores = competitor.get("linescores", [])
         round_scores = {1: None, 2: None, 3: None, 4: None}
+        holes_completed = {1: 0, 2: 0, 3: 0, 4: 0}
         total_strokes = 0
         for ls in linescores:
             period = ls.get("period")
@@ -108,6 +109,7 @@ def parse_leaderboard(data):
             if period and value is not None and 1 <= period <= 4:
                 round_scores[period] = int(value)
                 total_strokes += int(value)
+                holes_completed[period] = len(ls.get("linescores", []))
 
         if not linescores:
             total_strokes = None
@@ -121,13 +123,19 @@ def parse_leaderboard(data):
             if num_rounds_played == 2 and current_round > 2:
                 golfer_status = "MC"
 
-        # Thru: for a completed tournament, show "F"
-        # During play, ESPN doesn't give us thru in this endpoint reliably
+        # Thru: derive from hole-by-hole linescore count
         thru = ""
         if tournament_status == "complete":
             thru = "F"
-        elif num_rounds_played > 0 and golfer_status == "MC":
+        elif golfer_status == "MC":
             thru = "MC"
+        elif current_round and current_round in holes_completed:
+            h = holes_completed[current_round]
+            if h >= 18:
+                thru = "F"
+            elif h > 0:
+                thru = str(h)
+            # If h == 0, player hasn't started this round yet
 
         golfers.append({
             "espn_id": espn_id,

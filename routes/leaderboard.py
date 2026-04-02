@@ -118,14 +118,18 @@ def leaderboard():
     if not g.current_user:
         return redirect(url_for("auth.login"))
     from app import get_db_connection
+    from models.tournament import get_tournament_state
     conn = get_db_connection()
     standings, total_users = _build_full_leaderboard(conn)
+    tournament = get_tournament_state(conn)
     conn.close()
+    current_round = tournament.get("current_round", 0) if tournament else 0
     return render_template(
         "leaderboard.html",
         standings=standings,
         total_users=total_users,
         tier_names=TIER_NAMES,
+        current_round=current_round,
     )
 
 

@@ -111,7 +111,7 @@ def build_leaderboard(conn):
                 """SELECT p.tier, g.id AS golfer_id, g.name,
                           gs.total_strokes, gs.status, gs.position,
                           gs.round_1, gs.round_2, gs.round_3, gs.round_4,
-                          gs.to_par
+                          gs.to_par, gs.thru
                    FROM picks p
                    JOIN golfers g ON p.golfer_id = g.id
                    LEFT JOIN golfer_scores gs ON gs.golfer_id = g.id

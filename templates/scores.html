@@ -112,11 +112,16 @@
                     {% endif %}
                 </td>
                 <td style="color:var(--augusta-gold);font-weight:700">{{ s.to_par or '--' }}</td>
-                <td>{% if s.status in ('MC', 'WD', 'DQ') %}{{ s.status }}{% else %}{{ s.thru or '--' }}{% endif %}</td>
-                <td>{{ s.round_1 or '--' }}</td>
-                <td>{{ s.round_2 or '--' }}</td>
-                <td>{{ s.round_3 or '--' }}</td>
-                <td>{{ s.round_4 or '--' }}</td>
+                <td>{% if s.status in ('MC', 'WD', 'DQ') %}{{ s.status }}{% elif s.thru == 'F' %}F{% elif s.thru %}{{ s.thru }}{% else %}--{% endif %}</td>
+                {% for r in [1, 2, 3, 4] %}
+                {% set rs = s['round_' ~ r] %}
+                {% if r < current_round and rs %}<td>{{ rs }}</td>
+                {% elif r == current_round and s.thru and s.thru != 'F' %}<td>--</td>
+                {% elif r == current_round and s.thru == 'F' and rs %}<td>{{ rs }}</td>
+                {% elif rs and r <= current_round %}<td>{{ rs }}</td>
+                {% else %}<td>--</td>
+                {% endif %}
+                {% endfor %}
                 <td>{{ s.total_strokes or '--' }}</td>
             </tr>
             {% endfor %}

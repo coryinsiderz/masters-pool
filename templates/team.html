@@ -31,14 +31,14 @@
             <div class="sc-rounds">
                 {% for r in [1, 2, 3, 4] %}
                 {% set score = card['round_' ~ r] %}
-                {% if r == current_round and card.status == 'active' and score %}
-                <span>R{{ r }}: {{ card.to_par or '--' }}{% if card.thru and card.thru != 'F' %} Thru {{ card.thru }}{% endif %}</span>
+                {% if r == current_round and card.thru and card.thru != 'F' and card.status == 'active' %}
+                <span>R{{ r }}: {{ card.to_par or '--' }} Thru {{ card.thru }}</span>
                 {% elif r < current_round and score %}
                 <span>R{{ r }}: {{ score }}</span>
-                {% elif r > current_round or not score %}
-                <span>R{{ r }}: --</span>
-                {% else %}
+                {% elif r == current_round and card.thru == 'F' and score %}
                 <span>R{{ r }}: {{ score }}</span>
+                {% else %}
+                <span>R{{ r }}: --</span>
                 {% endif %}
                 {% endfor %}
             </div>

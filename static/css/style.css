@@ -705,6 +705,8 @@ input:-webkit-autofill:focus {
 
 .total-col {
     white-space: nowrap;
+    color: var(--augusta-gold) !important;
+    font-weight: 700;
 }
 
 /* Mini player cards in tier cells */
@@ -748,6 +750,11 @@ input:-webkit-autofill:focus {
 .mc-thru {
     font-size: 0.7rem;
     color: rgba(255, 248, 231, 0.6);
+}
+
+.mc-round {
+    font-size: 0.7rem;
+    color: var(--augusta-cream);
 }
 
 .mc-own {
