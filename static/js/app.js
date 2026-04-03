@@ -46,7 +46,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ── Sortable table ──
+    // ── Shared sort helpers ──
+    function parseToPar(val) {
+        if (!val || val === "--" || val === "E") return 0;
+        var n = parseInt(val, 10);
+        return isNaN(n) ? 9999 : n;
+    }
+
+    // ── Sortable table (pool leaderboard) ──
     var table = document.getElementById("leaderboard");
     if (table) {
         var thead = table.querySelector("thead");
@@ -74,12 +81,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        function parseToPar(val) {
-            if (!val || val === "--" || val === "E") return 0;
-            var n = parseInt(val, 10);
-            return isNaN(n) ? 9999 : n;
-        }
-
         function sortTable(key, asc) {
             var rows = Array.from(tbody.querySelectorAll("tr"));
             rows.sort(function (a, b) {
@@ -103,6 +104,75 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             rows.forEach(function (row) {
                 tbody.appendChild(row);
+            });
+        }
+    }
+
+    // ── Sortable scores table ──
+    var scoresTable = document.getElementById("scores-table");
+    if (scoresTable) {
+        var sThead = scoresTable.querySelector("thead");
+        var sTbody = scoresTable.querySelector("tbody");
+        var sHeaders = sThead.querySelectorAll("th[data-sort]");
+        var sCurrentSort = null;
+        var sAscending = true;
+
+        sHeaders.forEach(function (th) {
+            th.style.cursor = "pointer";
+            th.addEventListener("click", function (e) {
+                e.stopPropagation();
+                var col = th.getAttribute("data-col");
+                if (sCurrentSort === col) {
+                    sAscending = !sAscending;
+                } else {
+                    sCurrentSort = col;
+                    sAscending = true;
+                }
+                sHeaders.forEach(function (h) {
+                    h.classList.remove("sort-asc", "sort-desc");
+                });
+                th.classList.add(sAscending ? "sort-asc" : "sort-desc");
+                sortScoresTable(col, th.getAttribute("data-sort"), sAscending);
+            });
+        });
+
+        function parseNum(val) {
+            if (!val || val === "--" || val === "") return 9999;
+            var n = parseFloat(val);
+            return isNaN(n) ? 9999 : n;
+        }
+
+        function parseThru(val) {
+            if (!val || val === "--" || val === "") return 100;
+            if (val === "F") return 19;
+            if (val === "MC" || val === "WD" || val === "DQ") return 99;
+            var n = parseInt(val, 10);
+            return isNaN(n) ? 100 : n;
+        }
+
+        function sortScoresTable(col, sortType, asc) {
+            var rows = Array.from(sTbody.querySelectorAll("tr"));
+            rows.sort(function (a, b) {
+                var va, vb;
+                if (sortType === "alpha") {
+                    va = a.getAttribute("data-" + col) || "";
+                    vb = b.getAttribute("data-" + col) || "";
+                    return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                } else if (sortType === "topar") {
+                    va = parseToPar(a.getAttribute("data-topar"));
+                    vb = parseToPar(b.getAttribute("data-topar"));
+                } else if (sortType === "thru") {
+                    va = parseThru(a.getAttribute("data-thru"));
+                    vb = parseThru(b.getAttribute("data-thru"));
+                } else {
+                    va = parseNum(a.getAttribute("data-" + col));
+                    vb = parseNum(b.getAttribute("data-" + col));
+                }
+                if (va === vb) return 0;
+                return asc ? va - vb : vb - va;
+            });
+            rows.forEach(function (row) {
+                sTbody.appendChild(row);
             });
         }
     }
