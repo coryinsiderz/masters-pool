@@ -1,6 +1,9 @@
-import psycopg2.extras
-from flask import Blueprint, g, redirect, render_template, url_for
+from datetime import datetime, timedelta, timezone
 
+import psycopg2.extras
+from flask import Blueprint, g, jsonify, redirect, render_template, url_for
+
+from config import Config
 from models.pick import get_picks_for_user
 from models.tournament import get_scores_for_golfers, get_tournament_state
 
@@ -93,6 +96,188 @@ def team():
         total_users=total_users,
         current_round=current_round,
     )
+
+
+def _is_picks_locked():
+    deadline = datetime.fromisoformat(Config.PICKS_DEADLINE)
+    now = datetime.now(timezone(timedelta(hours=-4)))
+    return now > deadline
+
+
+@team_bp.route("/api/teams/summary")
+def teams_summary():
+    if not g.current_user:
+        return jsonify({"error": "Login required"}), 401
+    if not _is_picks_locked():
+        return jsonify({"error": "Picks are not yet locked"}), 403
+
+    from app import format_display_name, get_db_connection
+
+    conn = get_db_connection()
+
+    # Get all users who have picks
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """SELECT DISTINCT u.id, u.username
+               FROM users u JOIN picks p ON u.id = p.user_id
+               ORDER BY u.username"""
+        )
+        users = cur.fetchall()
+
+    # Fetch all picks and scores in bulk
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """SELECT p.user_id, p.tier, p.golfer_id, g.name AS golfer_name
+               FROM picks p JOIN golfers g ON p.golfer_id = g.id
+               ORDER BY p.user_id, p.tier"""
+        )
+        all_picks = cur.fetchall()
+
+    all_golfer_ids = list({p["golfer_id"] for p in all_picks})
+    scores = get_scores_for_golfers(conn, all_golfer_ids) if all_golfer_ids else []
+    conn.close()
+
+    scores_by_id = {s["golfer_id"]: s for s in scores}
+
+    # Group picks by user
+    picks_by_user = {}
+    for p in all_picks:
+        picks_by_user.setdefault(p["user_id"], []).append(p)
+
+    result = []
+    for user in users:
+        user_picks = picks_by_user.get(user["id"], [])
+        cards = []
+        for pick in user_picks:
+            score = scores_by_id.get(pick["golfer_id"], {})
+            cards.append({"to_par": score.get("to_par", ""), "total_strokes": score.get("total_strokes")})
+        team_to_par = _calc_team_to_par(cards)
+        result.append({
+            "user_id": user["id"],
+            "username": user["username"],
+            "display_name": format_display_name(user["username"]),
+            "team_to_par": team_to_par,
+        })
+
+    return jsonify(result)
+
+
+@team_bp.route("/api/team/<int:user_id>")
+def team_detail(user_id):
+    if not g.current_user:
+        return jsonify({"error": "Login required"}), 401
+    if not _is_picks_locked():
+        return jsonify({"error": "Picks are not yet locked"}), 403
+
+    from app import format_display_name, format_ordinal, get_db_connection
+
+    conn = get_db_connection()
+    picks = get_picks_for_user(conn, user_id)
+    if not picks:
+        conn.close()
+        return jsonify({"error": "No picks found for this user"}), 404
+
+    golfer_ids = [p["golfer_id"] for p in picks]
+    scores = get_scores_for_golfers(conn, golfer_ids)
+    tournament = get_tournament_state(conn)
+    current_round = tournament.get("current_round", 0) if tournament else 0
+
+    # Ownership data
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT COUNT(DISTINCT user_id) AS cnt FROM picks")
+        total_users = cur.fetchone()["cnt"]
+        cur.execute(
+            "SELECT golfer_id, COUNT(*) AS cnt FROM picks WHERE golfer_id = ANY(%s) GROUP BY golfer_id",
+            (golfer_ids,),
+        )
+        ownership = {r["golfer_id"]: r["cnt"] for r in cur.fetchall()}
+        cur.execute(
+            """SELECT p.golfer_id, u.username
+               FROM picks p JOIN users u ON p.user_id = u.id
+               WHERE p.golfer_id = ANY(%s)
+               ORDER BY u.username""",
+            (golfer_ids,),
+        )
+        owner_names = {}
+        for r in cur.fetchall():
+            owner_names.setdefault(r["golfer_id"], []).append(r["username"])
+
+    # Get username for this user_id
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+        user_row = cur.fetchone()
+    conn.close()
+
+    username = user_row["username"] if user_row else ""
+    scores_by_id = {s["golfer_id"]: s for s in scores}
+
+    cards = []
+    for pick in picks:
+        score = scores_by_id.get(pick["golfer_id"], {})
+        gid = pick["golfer_id"]
+        own_count = ownership.get(gid, 0)
+        own_pct = round(own_count / total_users * 100) if total_users else 0
+
+        # Format position with ordinal
+        pos_raw = score.get("position", "")
+        status = score.get("status", "active")
+        if status in ("MC", "WD", "DQ"):
+            pos_display = status
+        elif pos_raw:
+            pos_display = format_ordinal(pos_raw)
+        else:
+            pos_display = "--"
+
+        # Format thru
+        thru = score.get("thru", "")
+        if status in ("MC", "WD", "DQ"):
+            thru_display = ""
+        elif thru and thru != "F":
+            thru_display = f"Thru {thru}"
+        else:
+            thru_display = ""
+
+        cards.append({
+            "tier_name": TIER_NAMES.get(pick["tier"], str(pick["tier"])),
+            "name": pick["golfer_name"],
+            "to_par": score.get("to_par", "") or "--",
+            "total_strokes": score.get("total_strokes"),
+            "position": pos_display,
+            "thru": thru_display,
+            "status": status,
+            "ownership_pct": own_pct,
+            "owners": ", ".join(format_display_name(n) for n in owner_names.get(gid, [])),
+            "round_1": score.get("round_1"),
+            "round_2": score.get("round_2"),
+            "round_3": score.get("round_3"),
+            "round_4": score.get("round_4"),
+            "current_round": current_round,
+        })
+
+    _mark_counting(cards)
+    team_to_par = _calc_team_to_par(cards)
+
+    return jsonify({
+        "username": username,
+        "display_name": format_display_name(username),
+        "team_to_par": team_to_par,
+        "cards": [{
+            "tier_name": c["tier_name"],
+            "name": c["name"],
+            "to_par": c["to_par"],
+            "position": c["position"],
+            "thru": c["thru"],
+            "status": c["status"],
+            "ownership_pct": c["ownership_pct"],
+            "owners": c["owners"],
+            "counting": c["counting"],
+            "round_1": c["round_1"],
+            "round_2": c["round_2"],
+            "round_3": c["round_3"],
+            "round_4": c["round_4"],
+            "current_round": c["current_round"],
+        } for c in cards],
+    })
 
 
 def _mark_counting(cards):

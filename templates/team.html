@@ -11,6 +11,18 @@
         {% endif %}
     </div>
 
+    {% if picks_locked %}
+    <div class="toggle-row">
+        <button class="tab-btn active" id="my-team-tab">My Team</button>
+        <div class="custom-dropdown team-viewer-dropdown" id="their-team-dropdown">
+            <div class="custom-dropdown-trigger tab-btn" id="their-team-tab">
+                <span class="dd-text">Their Team</span>
+            </div>
+            <div class="custom-dropdown-options"></div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if not picks_locked %}
     <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:1.5rem;display:inline-block">Edit Picks</a>
     {% endif %}
@@ -49,4 +61,8 @@
     <p class="empty-state">You haven't made your picks yet. <a href="{{ url_for('picks.picks') }}" style="color:var(--augusta-gold)">Make your picks</a></p>
     {% endif %}
 </div>
+{% if picks_locked %}
+<script>var CURRENT_USER_ID = {{ current_user.id }};</script>
+<script src="{{ url_for('static', filename='js/team.js') }}"></script>
+{% endif %}
 {% endblock %}
