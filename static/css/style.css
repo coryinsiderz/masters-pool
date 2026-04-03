@@ -702,20 +702,62 @@ input:-webkit-autofill:focus {
     -webkit-overflow-scrolling: touch;
 }
 
-.leaderboard-table .sticky-col {
+.sticky-col {
     position: sticky;
     left: 0;
     z-index: 10;
     background: var(--cell-bg);
+    width: 90px;
+    min-width: 90px;
 }
 
-.leaderboard-table thead .sticky-col {
+thead .sticky-col {
     background: var(--augusta-green);
     z-index: 11;
 }
 
-.leaderboard-table tbody tr:nth-child(even) .sticky-col {
+tbody tr:nth-child(even) .sticky-col {
     background: var(--cell-bg-alt);
+}
+
+.sticky-col-narrow {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--cell-bg);
+    width: 40px;
+    min-width: 40px;
+}
+
+thead .sticky-col-narrow {
+    z-index: 11;
+    background: var(--augusta-green);
+}
+
+tbody tr:nth-child(even) .sticky-col-narrow {
+    background: var(--cell-bg-alt);
+}
+
+.sticky-col-2 {
+    position: sticky;
+    left: 90px;
+    z-index: 10;
+    background: var(--cell-bg);
+    width: 65px;
+    min-width: 65px;
+}
+
+thead .sticky-col-2 {
+    background: var(--augusta-green);
+    z-index: 11;
+}
+
+tbody tr:nth-child(even) .sticky-col-2 {
+    background: var(--cell-bg-alt);
+}
+
+#scores-table .sticky-col-2 {
+    left: 40px;
 }
 
 .leaderboard-table th[data-sort] {

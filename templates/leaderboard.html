@@ -12,7 +12,7 @@
         <thead>
             <tr>
                 <th class="sticky-col" data-sort="name">Name</th>
-                <th data-sort="total">Total</th>
+                <th class="sticky-col-2" data-sort="total">Total</th>
                 <th data-sort="tier-1">Tier 1</th>
                 <th data-sort="tier-2">Strong Side</th>
                 <th data-sort="tier-3">Weak Side</th>
@@ -29,7 +29,7 @@
                 data-tier-{{ t }}-par="{{ entry.tiers[t].to_par if entry.tiers.get(t) else '' }}"
                 {% endfor %}>
                 <td class="sticky-col">{{ entry.username|display_name }}</td>
-                <td class="total-col">{{ entry.team_to_par }}</td>
+                <td class="sticky-col-2 total-col">{{ entry.team_to_par }}</td>
                 {% for t in range(1, 7) %}
                 {% if entry.tiers.get(t) %}
                 {% set g = entry.tiers[t] %}

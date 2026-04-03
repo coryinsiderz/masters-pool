@@ -87,8 +87,8 @@
     <table class="data-table leaderboard-table" id="scores-table">
         <thead>
             <tr>
-                <th data-sort="num" data-col="pos" data-sort-default="asc">POS</th>
-                <th data-sort="alpha" data-col="player">PLAYER</th>
+                <th class="sticky-col-narrow" data-sort="num" data-col="pos" data-sort-default="asc">POS</th>
+                <th class="sticky-col-2" data-sort="alpha" data-col="player">PLAYER</th>
                 <th data-sort="num" data-col="owned">OWNED</th>
                 <th data-sort="topar" data-col="topar">TO PAR</th>
                 <th data-sort="thru" data-col="thru">THRU</th>
@@ -102,8 +102,8 @@
         <tbody>
             {% for s in scores %}
             <tr{% if s.golfer_id in my_golfer_ids %} class="my-player"{% endif %} data-pos="{{ s.position|replace('T','')|int if s.position and s.status == 'active' else 999 }}" data-player="{{ s.name }}" data-owned="{{ s.ownership_pct or 0 }}" data-topar="{{ s.to_par or '' }}" data-thru="{{ s.thru or '' }}" data-r1="{{ s.round_1 or '' }}" data-r2="{{ s.round_2 or '' }}" data-r3="{{ s.round_3 or '' }}" data-r4="{{ s.round_4 or '' }}" data-total="{{ s.total_strokes or '' }}">
-                <td>{{ s.position if s.status == 'active' else '' }}</td>
-                <td>{{ s.name }}</td>
+                <td class="sticky-col-narrow">{{ s.position if s.status == 'active' else '' }}</td>
+                <td class="sticky-col-2">{{ s.name }}</td>
                 <td class="owned-cell">
                     {% if s.ownership_count > 0 %}
                     <span class="owned-trigger" data-owners="{{ s.owners | map('display_name') | join(', ') }}" data-golfer="{{ s.name }}" data-pct="{{ s.ownership_pct }}">{{ s.ownership_pct }}%</span>
