@@ -560,40 +560,35 @@ input:-webkit-autofill:focus {
     white-space: nowrap;
 }
 
-/* ── Team viewer dropdown-as-tab ── */
+/* ── Team viewer dropdown-as-filter-btn ── */
 
-.team-viewer-dropdown {
+.custom-dropdown.team-viewer-dropdown {
     position: relative;
     width: auto;
 }
 
 .team-viewer-dropdown .custom-dropdown-trigger {
     width: auto;
-    padding: 0.3rem 0.75rem;
-    border: none;
-    border-bottom: 2px solid transparent;
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--augusta-gold);
     display: inline-block;
     justify-content: initial;
+    border-bottom: none;
 }
 
 .team-viewer-dropdown .custom-dropdown-trigger:hover {
-    border-bottom-color: transparent;
+    border-bottom: none;
+    background: var(--augusta-dark);
 }
 
 .team-viewer-dropdown .custom-dropdown-trigger.active {
-    border-bottom: 2px solid var(--augusta-gold);
+    background: var(--augusta-gold);
+    color: var(--augusta-dark);
 }
 
 .team-viewer-dropdown .custom-dropdown-options {
     left: 0;
     right: auto;
     min-width: 220px;
-    border-top: 1px solid var(--grid-line);
+    border-top: none;
 }
 
 
