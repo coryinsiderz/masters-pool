@@ -552,7 +552,7 @@ input:-webkit-autofill:focus {
 .sc-rounds {
     display: flex;
     gap: 1.25rem;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: rgba(255, 248, 231, 0.6);
 }
 
@@ -589,6 +589,54 @@ input:-webkit-autofill:focus {
     right: auto;
     min-width: 220px;
     border-top: none;
+}
+
+/* ── Side-by-side comparison ── */
+
+.sbs-toggle-row {
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.sbs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sbs-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sbs-card {
+    flex: 1;
+    background: rgba(0, 50, 30, 0.5);
+    border: 1px solid var(--augusta-gold);
+    border-radius: 6px;
+    padding: 0.5rem;
+}
+
+.sbs-card.counting {
+    border-left: 3px solid var(--augusta-gold);
+}
+
+.sbs-card .sc-name {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.95rem;
+    color: var(--augusta-cream);
+}
+
+.sbs-card .sc-score {
+    font-size: 1.1rem;
+    color: var(--augusta-gold);
+    text-align: right;
+}
+
+.sbs-card .sc-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 
