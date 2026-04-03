@@ -124,10 +124,11 @@ def parse_leaderboard(data):
                 golfer_status = "MC"
 
         # Thru: derive from hole-by-hole linescore count
+        # Per-golfer hole count is always the primary thru source.
+        # The "complete" shortcut only fires post-R4 as a fallback
+        # for golfers whose linescore data might be missing.
         thru = ""
-        if tournament_status == "complete":
-            thru = "F"
-        elif golfer_status == "MC":
+        if golfer_status == "MC":
             thru = "MC"
         elif current_round and current_round in holes_completed:
             h = holes_completed[current_round]
@@ -136,6 +137,9 @@ def parse_leaderboard(data):
             elif h > 0:
                 thru = str(h)
             # If h == 0, player hasn't started this round yet
+        elif tournament_status == "complete" and current_round >= 4:
+            # Only blanket "F" when tournament is truly over (post-R4)
+            thru = "F"
 
         golfers.append({
             "espn_id": espn_id,
