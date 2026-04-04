@@ -792,10 +792,13 @@ tbody tr:nth-child(even) .sticky-col-narrow {
     left: 70px;
     z-index: 10;
     background: var(--cell-bg);
+    border-right: none;
+}
+
+#leaderboard .sticky-col-2 {
     width: 65px;
     min-width: 65px;
     max-width: 65px;
-    border-right: none;
     margin-right: -1px;
     padding-right: calc(0.625rem + 1px);
 }
