@@ -16,6 +16,199 @@
         </div>
         <button type="submit" class="btn btn-primary">Login</button>
     </form>
-    <p class="auth-link">Need an account? <a href="{{ url_for('auth.register') }}">Register</a></p>
+    <p class="auth-link">First time? <a href="#" id="register-trigger">Register</a></p>
+    <p class="auth-link"><a href="#" id="forgot-trigger">Forget your password?</a></p>
 </div>
+
+<!-- Registration Modal -->
+<div id="register-modal-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <h2>Register</h2>
+        <form method="POST" action="{{ url_for('auth.register') }}">
+            <div class="form-group">
+                <label for="reg-username">Name</label>
+                <input type="text" id="reg-username" name="username" placeholder="Your leaderboard name and login" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="reg-password" name="password" placeholder="any" required autocomplete="new-password">
+                    <button type="button" class="toggle-password" tabindex="-1">
+                        <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--augusta-gold)" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="reg-confirm">Confirm Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="reg-confirm" name="confirm_password" placeholder="Please remember the above" required autocomplete="new-password">
+                    <button type="button" class="toggle-password" tabindex="-1">
+                        <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--augusta-gold)" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="reg-recovery">Recovery Question</label>
+                <input type="text" id="reg-recovery" name="recovery_contact" placeholder="Who's the goat?" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+            <button type="button" class="btn btn-secondary" id="register-close-btn">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="forgot-modal-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <h2>Password Recovery</h2>
+        <div class="form-group">
+            <label for="forgot-name">Name</label>
+            <input type="text" id="forgot-name">
+        </div>
+        <div class="form-group">
+            <label for="forgot-answer">Who'd you say the goat was?</label>
+            <input type="text" id="forgot-answer">
+        </div>
+        <div id="forgot-error" class="error-message" style="display:none;"></div>
+        <div id="forgot-success" style="display:none;">
+            <div class="form-group">
+                <label for="forgot-new-password">New Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="forgot-new-password">
+                    <button type="button" class="toggle-password" tabindex="-1">
+                        <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--augusta-gold)" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="forgot-reset-btn">Reset Password</button>
+        </div>
+        <button class="btn btn-primary" id="forgot-verify-btn">Verify</button>
+        <button class="btn btn-secondary" id="forgot-close-btn">Cancel</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ── Register modal ──
+    var regOverlay = document.getElementById('register-modal-overlay');
+    var regTrigger = document.getElementById('register-trigger');
+    var regCloseBtn = document.getElementById('register-close-btn');
+
+    regTrigger.addEventListener('click', function(e) {
+        e.preventDefault();
+        regOverlay.style.display = 'flex';
+    });
+
+    regCloseBtn.addEventListener('click', function() {
+        regOverlay.style.display = 'none';
+    });
+
+    regOverlay.addEventListener('click', function(e) {
+        if (e.target === regOverlay) regOverlay.style.display = 'none';
+    });
+
+    // ── Forgot password modal ──
+    var overlay = document.getElementById('forgot-modal-overlay');
+    var trigger = document.getElementById('forgot-trigger');
+    var closeBtn = document.getElementById('forgot-close-btn');
+    var verifyBtn = document.getElementById('forgot-verify-btn');
+    var resetBtn = document.getElementById('forgot-reset-btn');
+    var errorDiv = document.getElementById('forgot-error');
+    var successDiv = document.getElementById('forgot-success');
+    var nameInput = document.getElementById('forgot-name');
+    var answerInput = document.getElementById('forgot-answer');
+    var newPassInput = document.getElementById('forgot-new-password');
+
+    trigger.addEventListener('click', function(e) {
+        e.preventDefault();
+        overlay.style.display = 'flex';
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+        verifyBtn.style.display = '';
+        nameInput.value = '';
+        answerInput.value = '';
+    });
+
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+    });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.style.display = 'none';
+    });
+
+    verifyBtn.addEventListener('click', function() {
+        var name = nameInput.value.trim();
+        var answer = answerInput.value.trim();
+        if (!name || !answer) {
+            errorDiv.textContent = 'Please fill in both fields.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        errorDiv.style.display = 'none';
+        fetch('/api/verify-recovery', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name, answer: answer})
+        })
+        .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+        .then(function(res) {
+            if (res.ok) {
+                verifyBtn.style.display = 'none';
+                successDiv.style.display = 'block';
+                newPassInput.value = '';
+            } else {
+                errorDiv.textContent = res.data.error || 'Verification failed.';
+                errorDiv.style.display = 'block';
+            }
+        });
+    });
+
+    resetBtn.addEventListener('click', function() {
+        var name = nameInput.value.trim();
+        var answer = answerInput.value.trim();
+        var newPass = newPassInput.value;
+        if (!newPass) {
+            errorDiv.textContent = 'Please enter a new password.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        errorDiv.style.display = 'none';
+        fetch('/api/reset-password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name, answer: answer, new_password: newPass})
+        })
+        .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+        .then(function(res) {
+            if (res.ok) {
+                overlay.style.display = 'none';
+                window.location.href = '/login';
+            } else {
+                errorDiv.textContent = res.data.error || 'Reset failed.';
+                errorDiv.style.display = 'block';
+            }
+        });
+    });
+
+    // ── Toggle password eyeballs (all modals) ──
+    document.querySelectorAll('.toggle-password').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var input = btn.previousElementSibling;
+            var isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.style.opacity = isPassword ? '1' : '0.7';
+        });
+    });
+})();
+</script>
 {% endblock %}

@@ -12,18 +12,44 @@
         </div>
         <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="any" required autocomplete="new-password">
+            <div class="password-wrapper">
+                <input type="password" id="password" name="password" placeholder="any" required autocomplete="new-password">
+                <button type="button" class="toggle-password" tabindex="-1">
+                    <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--augusta-gold)" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
         </div>
         <div class="form-group">
             <label for="confirm_password">Confirm Password</label>
-            <input type="password" id="confirm_password" name="confirm_password" placeholder="Please remember the above" required autocomplete="new-password">
+            <div class="password-wrapper">
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Please remember the above" required autocomplete="new-password">
+                <button type="button" class="toggle-password" tabindex="-1">
+                    <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--augusta-gold)" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
         </div>
         <div class="form-group">
-            <label for="recovery_contact">Recovery</label>
-            <input type="text" id="recovery_contact" name="recovery_contact" placeholder="PIN if you don't remember the above" autocomplete="off">
+            <label for="recovery_contact">Recovery Question</label>
+            <input type="text" id="recovery_contact" name="recovery_contact" placeholder="Who's the goat?" autocomplete="off">
         </div>
         <button type="submit" class="btn btn-primary">Register</button>
     </form>
     <p class="auth-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
 </div>
+<script>
+document.querySelectorAll('.toggle-password').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const input = btn.previousElementSibling;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.style.opacity = isPassword ? '1' : '0.7';
+    });
+});
+</script>
 {% endblock %}
