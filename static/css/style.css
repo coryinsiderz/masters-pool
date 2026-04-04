@@ -796,6 +796,8 @@ tbody tr:nth-child(even) .sticky-col-narrow {
     min-width: 65px;
     max-width: 65px;
     border-right: none;
+    margin-right: -1px;
+    padding-right: calc(0.625rem + 1px);
 }
 
 thead .sticky-col-2 {
@@ -809,6 +811,17 @@ tbody tr:nth-child(even) .sticky-col-2 {
 
 #scores-table .sticky-col-2 {
     left: 40px;
+}
+
+.sticky-col-2 + td,
+.sticky-col-2 + th {
+    border-left: 1px solid var(--cell-bg);
+}
+thead .sticky-col-2 + th {
+    border-left: 1px solid var(--augusta-green);
+}
+tbody tr:nth-child(even) .sticky-col-2 + td {
+    border-left: 1px solid var(--cell-bg-alt);
 }
 
 .leaderboard-table th[data-sort] {
