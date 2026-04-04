@@ -57,8 +57,10 @@
                 <label for="reg-recovery">Recovery Question</label>
                 <input type="text" id="reg-recovery" name="recovery_contact" placeholder="Who's the goat?" autocomplete="off">
             </div>
-            <button type="submit" class="btn btn-primary">Register</button>
-            <button type="button" class="btn btn-secondary" id="register-close-btn">Cancel</button>
+            <div class="modal-buttons">
+                <button type="submit" class="btn btn-primary">Register</button>
+                <button type="button" class="btn btn-secondary" id="register-close-btn">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
@@ -89,10 +91,12 @@
                     </button>
                 </div>
             </div>
-            <button class="btn btn-primary" id="forgot-reset-btn">Reset Password</button>
         </div>
-        <button class="btn btn-primary" id="forgot-verify-btn">Verify</button>
-        <button class="btn btn-secondary" id="forgot-close-btn">Cancel</button>
+        <div class="modal-buttons">
+            <button class="btn btn-primary" id="forgot-reset-btn" style="display:none;">Reset Password</button>
+            <button class="btn btn-primary" id="forgot-verify-btn">Verify</button>
+            <button class="btn btn-secondary" id="forgot-close-btn">Cancel</button>
+        </div>
     </div>
 </div>
 
@@ -134,6 +138,7 @@
         errorDiv.style.display = 'none';
         successDiv.style.display = 'none';
         verifyBtn.style.display = '';
+        resetBtn.style.display = 'none';
         nameInput.value = '';
         answerInput.value = '';
     });
@@ -164,6 +169,7 @@
         .then(function(res) {
             if (res.ok) {
                 verifyBtn.style.display = 'none';
+                resetBtn.style.display = '';
                 successDiv.style.display = 'block';
                 newPassInput.value = '';
             } else {
