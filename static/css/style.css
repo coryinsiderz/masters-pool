@@ -755,8 +755,9 @@ input:-webkit-autofill:focus {
     left: 0;
     z-index: 10;
     background: var(--cell-bg);
-    width: 90px;
-    min-width: 90px;
+    width: 70px;
+    min-width: 70px;
+    border-right: none;
 }
 
 thead .sticky-col {
@@ -788,11 +789,13 @@ tbody tr:nth-child(even) .sticky-col-narrow {
 
 .sticky-col-2 {
     position: sticky;
-    left: 90px;
+    left: 70px;
     z-index: 10;
     background: var(--cell-bg);
     width: 65px;
     min-width: 65px;
+    max-width: 65px;
+    border-right: none;
 }
 
 thead .sticky-col-2 {
@@ -1181,14 +1184,6 @@ tbody tr:nth-child(even) .sticky-col-2 {
     text-overflow: ellipsis;
 }
 
-.ab-sticky-own {
-    left: 130px;
-    width: 45px;
-    min-width: 45px;
-    color: #666;
-    font-size: 0.7rem;
-    z-index: 10;
-}
 
 .augusta-board thead .ab-sticky {
     z-index: 11;
@@ -1350,13 +1345,6 @@ tbody tr:nth-child(even) .sticky-col-2 {
         width: 90px;
         min-width: 90px;
         font-size: 0.7rem;
-    }
-
-    .augusta-board .ab-sticky-own {
-        left: 130px;
-        width: 45px;
-        min-width: 45px;
-        font-size: 0.6rem;
     }
 
     .hole-cell {

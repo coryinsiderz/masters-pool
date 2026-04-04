@@ -26,7 +26,7 @@
             <tr>
                 <th class="ab-sticky ab-sticky-score">Score</th>
                 <th class="ab-sticky ab-sticky-name">Player</th>
-                <th class="ab-sticky ab-sticky-own">Owned</th>
+                <th>Owned</th>
                 {% for h in range(1, 19) %}
                 <th class="hole-header">{{ h }}</th>
                 {% endfor %}
@@ -35,7 +35,7 @@
             <tr class="par-row">
                 <td class="ab-sticky ab-sticky-score"></td>
                 <td class="ab-sticky ab-sticky-name">Par</td>
-                <td class="ab-sticky ab-sticky-own"></td>
+                <td></td>
                 {% for p in par %}
                 <td class="hole-cell">{{ p }}</td>
                 {% endfor %}
@@ -51,7 +51,7 @@
                 {% set tp = s.to_par or '' %}
                 <td class="ab-sticky ab-sticky-score {% if tp.startswith('-') %}ab-score-under{% else %}ab-score-over{% endif %}">{% if tp.startswith('-') %}{{ tp[1:] }}{% elif tp.startswith('+') %}{{ tp[1:] }}{% elif tp == 'E' %}0{% else %}{{ tp or '--' }}{% endif %}</td>
                 <td class="ab-sticky ab-sticky-name ab-player-name">{{ s.name.split(' ')[-1] }}</td>
-                <td class="ab-sticky ab-sticky-own">
+                <td>
                     {% if s.ownership_count > 0 %}
                     <span class="owned-trigger" data-owners="{{ s.owners | map('display_name') | join(', ') }}" data-golfer="{{ s.name }}" data-pct="{{ s.ownership_pct }}">{{ s.ownership_pct }}%</span>
                     {% else %}-{% endif %}

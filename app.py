@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.secret_key = Config.SECRET_KEY
 app.permanent_session_lifetime = timedelta(days=30)
 
@@ -86,6 +87,15 @@ def load_user():
             g.current_user = None
         except Exception:
             session.pop("user_id", None)
+
+
+@app.after_request
+def add_no_cache(response):
+    if 'text/css' in response.content_type or 'javascript' in response.content_type:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
 
 
 @app.context_processor
