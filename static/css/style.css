@@ -745,6 +745,52 @@ input:-webkit-autofill:focus {
     align-items: center;
 }
 
+/* ── Rules page ── */
+
+.rules-section {
+    margin-bottom: 1.75rem;
+}
+
+.rules-heading {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: var(--augusta-gold);
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--augusta-gold);
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.75rem;
+    margin-top: 0;
+    letter-spacing: 0.05em;
+}
+
+.rules-section p {
+    color: var(--augusta-cream);
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    margin-bottom: 0.6rem;
+    margin-top: 0;
+}
+
+.rules-tab-name {
+    color: var(--augusta-gold);
+}
+
+.payout-line {
+    color: var(--augusta-cream);
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.payout-value {
+    color: var(--augusta-gold);
+}
+
+.payout-spacer {
+    height: 0.75rem;
+}
+
 
 .flash-error {
     background: rgba(196, 30, 58, 0.2);

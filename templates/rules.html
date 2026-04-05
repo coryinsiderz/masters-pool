@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Rules{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>Rules</h1>
+
+    <div class="rules-section">
+        <h2 class="rules-heading">Scoring</h2>
+        <p>Pick one player from each of six tiers. Your four best players' cumulative stroke totals count as your team score. Lowest total wins. Your two worst players are dropped after all 72 holes. If a player misses the cut, their score should it count is the worst score among players who made the cut plus one stroke. Tiebreaker goes to the team with the best individual finisher, then second best, continuing through the sixth player if needed.</p>
+    </div>
+
+    <div class="rules-section">
+        <h2 class="rules-heading">Navigation</h2>
+        <p><span class="rules-tab-name">My Team</span> — View your picks and player scores. Compare your team against any other team with the Versus view or view their team in full. Pay your entry from here.</p>
+        <p><span class="rules-tab-name">Pool</span> — Live pool standings showing every team's players and scores across all six tiers. The top four will be highlighted. Scroll right on mobile to see the full roster.</p>
+        <p><span class="rules-tab-name">Tournament</span> — Full tournament leaderboard sorted by position. Pretend you can't use your phone and toggle to the traditional Augusta-style scorecard for hole-by-hole updates in round.</p>
+        <p><span class="rules-tab-name">Exposure</span> — Player ownership across the pool. Tap any ownership percentage on any page to see exactly who owns that player.</p>
+        <p><span class="rules-tab-name">Rules</span> — Them's the rules.</p>
+    </div>
+
+    <div class="rules-section">
+        <h2 class="rules-heading">Payouts</h2>
+        <div class="payout-line">Entry <span class="payout-value">&middot; $10</span></div>
+        {% if picks_locked %}
+        <div class="payout-line">Entries <span class="payout-value">&middot; {{ total_entries }}</span></div>
+        <div class="payout-line">Pot <span class="payout-value">&middot; ${{ total_pot }}</span></div>
+        <div class="payout-spacer"></div>
+        <div class="payout-line">1st <span class="payout-value">&middot; ${{ payout_1st }}</span></div>
+        <div class="payout-line">2nd <span class="payout-value">&middot; ${{ payout_2nd }}</span></div>
+        <div class="payout-line">3rd <span class="payout-value">&middot; ${{ payout_3rd }}</span></div>
+        {% else %}
+        <div class="payout-line">Entries <span class="payout-value">&middot; TBD</span></div>
+        <div class="payout-line">Pot <span class="payout-value">&middot; TBD</span></div>
+        <div class="payout-spacer"></div>
+        <div class="payout-line">1st <span class="payout-value">&middot; TBD</span></div>
+        <div class="payout-line">2nd <span class="payout-value">&middot; TBD</span></div>
+        <div class="payout-line">3rd <span class="payout-value">&middot; TBD</span></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
