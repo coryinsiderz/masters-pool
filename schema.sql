@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS golfer_scores (
     position VARCHAR(10),
     thru VARCHAR(10),
     current_round INTEGER DEFAULT 0,
+    current_round_par TEXT,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 

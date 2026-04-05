@@ -82,6 +82,7 @@ def team():
             "round_2": score.get("round_2"),
             "round_3": score.get("round_3"),
             "round_4": score.get("round_4"),
+            "current_round_par": score.get("current_round_par"),
         })
 
     # Calculate team to-par and mark counting golfers
@@ -252,6 +253,7 @@ def team_detail(user_id):
             "round_3": score.get("round_3"),
             "round_4": score.get("round_4"),
             "current_round": current_round,
+            "current_round_par": score.get("current_round_par"),
         })
 
     _mark_counting(cards)
@@ -276,6 +278,7 @@ def team_detail(user_id):
             "round_3": c["round_3"],
             "round_4": c["round_4"],
             "current_round": c["current_round"],
+            "current_round_par": c["current_round_par"],
         } for c in cards],
     })
 

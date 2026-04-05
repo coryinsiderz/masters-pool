@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 var roundScore = c["round_" + r];
                 var cr = c.current_round;
                 if (r === cr && c.thru && c.status === "active") {
-                    html += '<span>R' + r + ': ' + esc(c.to_par) + ' ' + esc(c.thru) + '</span>';
+                    html += '<span>R' + r + ': ' + esc(c.current_round_par || c.to_par) + ' ' + esc(c.thru) + '</span>';
                 } else if (r < cr && roundScore) {
                     html += '<span>R' + r + ': ' + roundScore + '</span>';
                 } else if (r === cr && !c.thru && roundScore) {

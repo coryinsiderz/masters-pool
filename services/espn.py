@@ -141,6 +141,14 @@ def parse_leaderboard(data):
             # Only blanket "F" when tournament is truly over (post-R4)
             thru = "F"
 
+        # Capture the current round's to-par from ESPN displayValue
+        current_round_par = None
+        for ls in linescores:
+            if ls.get("period") == current_round:
+                dv = ls.get("displayValue", "")
+                if dv:
+                    current_round_par = dv
+
         golfers.append({
             "espn_id": espn_id,
             "name": name,
@@ -154,6 +162,7 @@ def parse_leaderboard(data):
             "status": golfer_status,
             "thru": thru,
             "current_round": current_round,
+            "current_round_par": current_round_par,
         })
 
     logger.info("Parsed %d golfers from ESPN data", len(golfers))
@@ -217,6 +226,7 @@ def update_scores(conn=None):
                     position=golfer["position"],
                     thru=golfer["thru"],
                     current_round=golfer["current_round"],
+                    current_round_par=golfer["current_round_par"],
                 )
                 updated_count += 1
 

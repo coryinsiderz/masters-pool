@@ -68,6 +68,7 @@ def _build_full_leaderboard(conn):
                 "round_2": g.get("round_2"),
                 "round_3": g.get("round_3"),
                 "round_4": g.get("round_4"),
+                "current_round_par": g.get("current_round_par"),
             }
 
         # Calculate team to-par total

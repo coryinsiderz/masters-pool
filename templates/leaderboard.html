@@ -39,7 +39,7 @@
                         <span class="mc-name">{{ g.name }}</span>
                         <span class="mc-score">{% if g.status in ('MC','WD','DQ') %}{{ g.status }}{% else %}{{ g.to_par or '--' }}{% endif %}</span>
                         {% if g.status not in ('MC','WD','DQ') %}
-                        <span class="mc-round">{% if g.thru and g.thru != 'F' %}{{ g.to_par or '--' }} Thru {{ g.thru }}{% elif g.thru == 'F' %}{{ g['round_' ~ current_round] or '--' }}{% else %}--{% endif %}</span>
+                        <span class="mc-round">{% if g.thru and g.thru != 'F' %}{{ g.current_round_par or g.to_par or '--' }} Thru {{ g.thru }}{% elif g.thru == 'F' %}{{ g['round_' ~ current_round] or '--' }}{% else %}--{% endif %}</span>
                         {% endif %}
                         <span class="mc-own owned-trigger" data-owners="{{ g.owners | map('display_name') | join(', ') }}" data-golfer="{{ g.name }}" data-pct="{{ g.ownership_pct }}">{{ g.ownership_pct }}%</span>
                     </div>
