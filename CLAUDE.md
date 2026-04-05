@@ -44,11 +44,13 @@
 | `routes/admin.py` | Player management, ESPN import, score updates, polling controls, test data |
 | `routes/team.py` | Squad page with vertical cards, counting indicators, round status |
 | `routes/exposure.py` | Golfer ownership analysis with tier/player filters |
+| `routes/rules.py` | Rules page with scoring, navigation, dynamic payouts |
 | `services/espn.py` | ESPN API polling, parsing (including thru from hole counts), scorecard data |
 | `services/scoring.py` | 4-of-6 scoring engine, penalty calculation, leaderboard builder |
 | `templates/base.html` | Master template: nav, ownership modal, background, fonts, meta tags |
 | `static/css/style.css` | All styles: Augusta aesthetic, .tab-btn, .filter-btn, mini-cards, augusta-board |
 | `static/js/app.js` | Hamburger menu, custom dropdowns, table sorting, player filters, ownership modal |
+| `static/js/team.js` | Squad page JS: Their Team dropdown, Versus comparison, card rendering |
 | `static/images/hole12.jpg` | Background image (Augusta Hole 12, Golden Bell) |
 
 ## Deployment
@@ -75,11 +77,13 @@
 - **To-par display**: Always var(--augusta-gold) everywhere. No red/green color coding on to-par.
 - **Uppercase**: Only leaderboard table headers. Everything else mixed case.
 - **Display labels**: "Player" not "Golfer" in user-facing text. "Squad" for team page title.
-- **Nav order**: My Team, Pool, Tournament, Exposure, Admin (if admin), Logout
+- **Nav order**: My Team, Pool, Tournament, Exposure, Rules, Admin (if admin), Logout
 - **Toggle buttons**: .tab-btn for text-only tabs (no background), .filter-btn for solid action buttons (green bg)
 - **Ownership**: Percentage only in display. Click opens centered modal with golfer name + owner list.
 - **Custom dropdowns**: Replace native `<select>` elements for font consistency
 - **Favicon**: Hibiscus emoji SVG
+- **Login modals**: Register and forgot-password are modals on the login page, not separate pages
+- **Payment display**: .payment-status element above Edit Picks (pre-lock) or tabs (post-lock). Gold text, no underline for Pay, gold underline for Paid.
 
 ## Working Style
 

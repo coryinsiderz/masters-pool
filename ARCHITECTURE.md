@@ -43,6 +43,7 @@ masters-pool/
     admin.py              Player management, ESPN import, polling controls, test data routes (Blueprint: admin)
     team.py               Squad page with vertical cards, counting indicators, round status (Blueprint: team)
     exposure.py           Golfer ownership analysis with tier/player filters (Blueprint: exposure)
+    rules.py              Rules page with scoring explanation and dynamic payouts (Blueprint: rules)
 
   services/
     __init__.py
@@ -59,10 +60,12 @@ masters-pool/
     admin.html            Admin panel: polling, ESPN import, test data, player list, tier management
     team.html             Squad: vertical golfer cards with scores, ordinal positions, round status
     exposure.html         Golfer ownership table with tier filters and My Players toggle
+    rules.html            Rules: scoring explanation, navigation guide, dynamic payouts
 
   static/
     css/style.css         All styles: Augusta aesthetic, tab/filter buttons, mini-cards, augusta-board, modal
     js/app.js             Hamburger menu, custom dropdowns, table sorting, player filters, ownership modal
+    js/team.js            Squad page JS: Their Team dropdown, Versus side-by-side, card rendering
     images/hole12.jpg     Background image (Augusta Hole 12, Golden Bell, 2880x1620)
 ```
 
@@ -76,6 +79,7 @@ masters-pool/
 | password_hash | VARCHAR(255) | NOT NULL | Werkzeug pbkdf2:sha256 hash |
 | is_admin | BOOLEAN | DEFAULT FALSE | Not currently used for admin checks |
 | recovery_contact | VARCHAR(100) | nullable | PIN or email for account recovery |
+| paid | BOOLEAN | DEFAULT FALSE | Venmo payment status |
 | created_at | TIMESTAMP | DEFAULT NOW() | Registration timestamp |
 
 ### golfers
@@ -112,6 +116,7 @@ masters-pool/
 | position | VARCHAR(10) | nullable | Tournament position ("1", "T5") |
 | thru | VARCHAR(10) | nullable | Holes completed: "F", "12", or "" |
 | current_round | INTEGER | DEFAULT 0 | Which round is in progress |
+| current_round_par | TEXT | nullable | ESPN round-specific to-par (displayValue from linescore) |
 | updated_at | TIMESTAMP | DEFAULT NOW() | Last ESPN update |
 
 ### tournament_state
@@ -156,6 +161,12 @@ masters-pool/
 | POST | /admin/reset-for-testing | admin.reset_for_testing | Admin | Full reset with 24 test users |
 | GET | /admin/polling-status | admin.polling_status | Admin | Scheduler state as JSON |
 | POST | /admin/set-poll-interval | admin.set_poll_interval | Admin | Change polling interval |
+| GET | /api/teams/summary | team.teams_summary | Login+Locked | All users with team totals |
+| GET | /api/team/ID | team.team_detail | Login+Locked | Full card data for a user |
+| POST | /api/verify-recovery | auth.verify_recovery | None | Verify recovery question answer |
+| POST | /api/reset-password | auth.reset_password | None | Reset password after verification |
+| POST | /admin/toggle-paid/ID | admin.toggle_paid | Admin | Toggle user paid status |
+| GET | /rules | rules.rules | Login | Rules, navigation guide, payouts |
 
 ## ESPN API integration
 
@@ -190,8 +201,13 @@ events[0].competitions[0].status.type.state -> "pre", "in", "post"
 events[0].competitions[0].status.period -> current round number
 ```
 
+- linescores[].displayValue -> round-specific to-par string (e.g., "-1" for current round)
+
 ### Thru derivation
 ESPN's scoreboard endpoint doesn't provide a `thru` field directly. It's derived from the count of hole-by-hole linescores in the current round: 18 holes = "F" (finished), fewer = in progress (e.g., "10" = through 10 holes), 0 = hasn't started.
+
+- Only sets blanket "F" when tournament is truly over (current_round >= 4 and status complete)
+- Per-golfer hole count is always the primary source
 
 ### Background polling
 APScheduler BackgroundScheduler runs `update_scores()` at configurable intervals. Admin can set to 60s (1 min), 300s (5 min), or 7500s (effectively off). Scheduler only starts in the main Flask process (checks `WERKZEUG_RUN_MAIN` in debug mode).

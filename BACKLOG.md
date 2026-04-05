@@ -12,16 +12,16 @@
 
 ## Features to Build
 
-### View other entrants' teams
-- Add a dropdown or tab system on the Squad page to view any other user's team
-- Shows their 6 golfer cards with the same layout as your own squad
-- Read-only view -- no editing other people's picks
+### ~~View other entrants' teams~~
+- [x] View other entrants' teams (implemented: Their Team dropdown + Versus side-by-side)
 
-### Forgot password flow
-- User enters their name + recovery PIN
-- If both match, allow password reset
-- Simple form on the login page: "Forgot password?" link
-- No email required -- PIN-based recovery only
+### ~~Forgot password flow~~
+- [x] Forgot password flow (implemented: recovery question modal on login page)
+
+### DG API projections integration
+- DataGolf API for win probability line charts throughout tournament week
+- Primary next feature after Masters go-live
+- Show team win probability trends over time
 
 ### Different background images per page
 - Each template can override the background via {% block bg_image %}
@@ -33,17 +33,17 @@
 - Requires mapping ESPN IDs to Masters.com player IDs
 - Masters.com player pages: https://www.masters.com/en_US/players/player_{id}.html
 
-### DG API projections integration
-- DataGolf API for pre-tournament projections and win probabilities
-- Show projected finish alongside actual scores
-- Requires API key and subscription
-
 ## Known Issues to Fix
 
 ### Mobile traditional scorecard sticky columns
 - Sticky columns (Score, Player, Owned) may still overlap on very narrow viewports (< 375px)
 - Partially fixed with explicit widths and z-index but needs testing on real devices
 - Consider hiding the Owned column on mobile to give more space
+
+### Pool leaderboard sticky column gap
+- Faint white line between Name and Total columns on mobile horizontal scroll
+- border-right:none and box-shadow approaches tried, border-collapse artifacts remain
+- Works fine on desktop, only visible on mobile when scrolling right
 
 ### Session transition
 - When users first register, they get redirected to team page but may not have picked yet

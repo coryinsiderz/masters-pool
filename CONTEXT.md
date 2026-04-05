@@ -39,6 +39,12 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 | ESPN test | GET /admin/test-espn | Returns raw parsed ESPN data as JSON |
 | ESPN field | GET /admin/espn-field | Lists all ESPN field golfers with IDs |
 | Ownership modal | All pages | Centered modal showing golfer name, percentage, owner list |
+| View other teams | GET /api/teams/summary, /api/team/<id> | Working, post-lock dropdown + Versus side-by-side |
+| Password recovery | POST /api/verify-recovery, /api/reset-password | Working, case-insensitive recovery question |
+| Register modal | Login page modal | Working, replaces navigation to /register |
+| Payment tracking | Venmo deeplink + admin toggle | Working, paid column, Pay @csbaltz $10 button |
+| Rules page | GET /rules | Working, scoring/navigation/dynamic payouts |
+| Sortable tournament headers | scores.html | Working, all columns sortable |
 | Health check | GET /health | Returns 200 OK |
 
 ## What's not built yet
@@ -61,13 +67,20 @@ See BACKLOG.md for the full list.
 - **Username storage**: Preserved as typed (case-insensitive lookup via LOWER())
 - **Password hashing**: pbkdf2:sha256 (not scrypt) for Python 3.9 compatibility
 - **Display labels**: "Player" not "Golfer" in all user-facing text. "Squad" for team page title.
-- **Nav order**: My Team, Pool, Tournament, Exposure, Admin (if admin), Logout
+- **Nav order**: My Team, Pool, Tournament, Exposure, Rules, Admin (if admin), Logout
 - **Page titles (browser tab)**: My Team, Pool, Tournament, Exposure, Admin, Login, Register
 - **Favicon**: Hibiscus emoji SVG (closest to azalea)
 - **Toggle buttons**: .tab-btn for text-only tabs, .filter-btn for solid action buttons
 - **Ownership display**: Percentage only, click opens centered modal
 - **Thru parsing**: Derived from hole-by-hole linescore count in ESPN data (18 holes = F, fewer = in progress)
 - **Background polling**: APScheduler with admin-configurable intervals (60s, 300s, 7500s)
+- **Squad tabs**: My Team / Their Team (dropdown) / Versus — three filter-btn tabs post-lock
+- **Payment**: $10 entry via Venmo deeplink (venmo:// URI with web fallback), paid status tracked per user
+- **Recovery question**: "Who's the goat?" — case-insensitive comparison
+- **Payouts**: 60/25/15 split rounded to nearest $5, shown TBD pre-lock
+- **Round to-par display**: Mid-round cards show ESPN displayValue (round-specific to-par) not cumulative
+- **Sticky columns**: Pool leaderboard (Name 70px + Total 65px), tournament scores (POS 40px + Player auto)
+- **No-cache headers**: CSS and JS served with Cache-Control: no-store during development
 
 ## Known issues and quirks
 
@@ -83,3 +96,4 @@ See BACKLOG.md for the full list.
 - **Mock scorecard data**: When no hole-by-hole data is available from ESPN, falls back to mock random data for visual testing. Remove before go-live.
 - **Test routes**: /admin/create-test-users and /admin/reset-for-testing are temporary. Delete before Masters go-live.
 - **Scheduler double-start**: In debug mode, Flask's reloader spawns two processes. Scheduler checks WERKZEUG_RUN_MAIN to only start once.
+- **Sticky column gap**: Pool leaderboard shows a faint white line between Name and Total columns on mobile horizontal scroll. CSS border-right:none applied but border-collapse artifacts remain.
