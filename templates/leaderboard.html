@@ -19,6 +19,7 @@
                 <th data-sort="tier-4">Maybe</th>
                 <th data-sort="tier-5">Meh</th>
                 <th data-sort="tier-6">Miracles</th>
+                <th>Paid</th>
             </tr>
         </thead>
         <tbody>
@@ -47,6 +48,7 @@
                 <td class="tier-cell bench"><div class="mini-card"><span class="mc-name">--</span></div></td>
                 {% endif %}
                 {% endfor %}
+                <td style="text-align:center">{% if entry.paid %}<span style="color:var(--augusta-gold)">&#10003;</span>{% else %}<span style="color:var(--augusta-cream)">&#10007;</span>{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>

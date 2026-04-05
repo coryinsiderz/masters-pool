@@ -6,10 +6,17 @@
 <div class="page-container">
     <div class="squad-header">
         <h1>Squad</h1>
-        {% if has_picks %}
-        <span class="squad-total">{{ team_to_par }}</span>
-        {% endif %}
     </div>
+
+    {% if current_user and current_user.paid %}
+    <span class="payment-status paid">Paid</span>
+    {% else %}
+    <a href="#" onclick="openVenmo(event)" class="payment-status">Pay @csbaltz $10</a>
+    {% endif %}
+
+    {% if not picks_locked %}
+    <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:0.5rem;display:inline-block">Edit Picks</a>
+    {% endif %}
 
     {% if picks_locked %}
     <div class="toggle-row">
@@ -20,14 +27,8 @@
             </div>
             <div class="custom-dropdown-options"></div>
         </div>
+        <button class="filter-btn" id="vs-tab">Versus</button>
     </div>
-    <div class="sbs-toggle-row toggle-row" id="sbs-toggle-row" style="display:none;">
-        <button class="tab-btn" id="sbs-toggle">Side by Side</button>
-    </div>
-    {% endif %}
-
-    {% if not picks_locked %}
-    <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:1.5rem;display:inline-block">Edit Picks</a>
     {% endif %}
 
     {% if has_picks %}
@@ -68,4 +69,20 @@
 <script>var CURRENT_USER_ID = {{ current_user.id }};</script>
 <script src="{{ url_for('static', filename='js/team.js') }}"></script>
 {% endif %}
+<script>
+function openVenmo(e) {
+    e.preventDefault();
+    var appUrl = 'venmo://paycharge?txn=pay&recipients=csbaltz&amount=10&note=BaltzMastersPool';
+    var webUrl = 'https://venmo.com/csbaltz?txn=pay&amount=10&note=BaltzMastersPool';
+
+    var now = Date.now();
+    window.location = appUrl;
+
+    setTimeout(function() {
+        if (Date.now() - now < 2000) {
+            window.location = webUrl;
+        }
+    }, 1500);
+}
+</script>
 {% endblock %}

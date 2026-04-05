@@ -77,6 +77,7 @@ def _build_full_leaderboard(conn):
         result.append({
             "user_id": entry["user_id"],
             "username": entry["username"],
+            "paid": entry.get("paid", False),
             "rank": entry["rank"],
             "team_total": entry["team_total"],
             "team_to_par": team_to_par,

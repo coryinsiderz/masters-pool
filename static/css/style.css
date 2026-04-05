@@ -555,8 +555,6 @@ input:-webkit-autofill:focus {
     align-items: baseline;
     gap: 1rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--panel-border);
-    padding-bottom: 0.75rem;
 }
 
 .squad-header h1 {
@@ -570,6 +568,24 @@ input:-webkit-autofill:focus {
     font-weight: 600;
     font-size: 1.75rem;
     color: var(--augusta-gold);
+}
+
+.payment-status {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--augusta-gold);
+    text-decoration: none;
+    display: block;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: none;
+}
+
+.payment-status.paid {
+    display: block;
+    width: fit-content;
+    border-bottom: 2px solid var(--augusta-gold);
 }
 
 .squad-cards {
@@ -647,6 +663,13 @@ input:-webkit-autofill:focus {
     white-space: nowrap;
 }
 
+#my-team-tab,
+#vs-tab,
+.team-viewer-dropdown .custom-dropdown-trigger {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+}
+
 /* ── Team viewer dropdown-as-filter-btn ── */
 
 .custom-dropdown.team-viewer-dropdown {
@@ -680,10 +703,6 @@ input:-webkit-autofill:focus {
 
 /* ── Side-by-side comparison ── */
 
-.sbs-toggle-row {
-    margin-top: -0.5rem;
-    margin-bottom: 0.5rem;
-}
 
 .sbs-container {
     display: flex;

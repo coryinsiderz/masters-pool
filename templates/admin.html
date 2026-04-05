@@ -113,6 +113,30 @@
         </form>
     </section>
 
+    <section class="admin-section">
+        <h2>Entrants</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Paid</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.username|display_name }}</td>
+                    <td style="text-align:center">
+                        <button class="paid-toggle" data-user-id="{{ u.id }}" style="background:none;border:none;cursor:pointer;font-size:1.1rem">
+                            {% if u.paid %}<span style="color:var(--augusta-gold)">&#10003;</span>{% else %}<span style="color:var(--augusta-cream)">&#10007;</span>{% endif %}
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
     <details class="admin-section">
         <summary><h2 style="display:inline">Database</h2></summary>
         <form method="POST" action="{{ url_for('admin.init_db') }}" style="margin-top:1rem">
@@ -143,6 +167,22 @@
         .catch(function() {
             document.getElementById("polling-status").textContent = "Could not fetch polling status";
         });
+
+    // Paid toggles
+    document.querySelectorAll('.paid-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var userId = btn.getAttribute('data-user-id');
+            fetch('/admin/toggle-paid/' + userId, {method: 'POST'})
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.paid) {
+                        btn.innerHTML = '<span style="color:var(--augusta-gold)">&#10003;</span>';
+                    } else {
+                        btn.innerHTML = '<span style="color:var(--augusta-cream)">&#10007;</span>';
+                    }
+                });
+        });
+    });
 })();
 </script>
 {% endblock %}

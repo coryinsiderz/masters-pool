@@ -4,26 +4,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var myTab = document.getElementById("my-team-tab");
     var theirTab = document.getElementById("their-team-tab");
+    var vsTab = document.getElementById("vs-tab");
     var ddText = theirTab.querySelector(".dd-text");
     var optionsContainer = dropdown.querySelector(".custom-dropdown-options");
     var cardsContainer = document.querySelector(".squad-cards");
-    var squadTotal = document.querySelector(".squad-total");
-    var sbsToggleRow = document.getElementById("sbs-toggle-row");
-    var sbsToggle = document.getElementById("sbs-toggle");
     var originalCardsHTML = cardsContainer ? cardsContainer.innerHTML : "";
-    var originalTotal = squadTotal ? squadTotal.textContent : "";
 
     var myCards = null;
+    var myTotal = "";
     var theirCards = null;
     var theirDisplayName = "";
     var theirTotal = "";
-    var sbsActive = false;
+    var activeTab = "mine"; // "mine", "theirs", "vs"
 
-    // Fetch current user's card data for SBS comparisons
+    // Fetch current user's card data
     fetch("/api/team/" + CURRENT_USER_ID)
         .then(function (r) { return r.json(); })
         .then(function (data) {
             if (data.cards) myCards = data.cards;
+            if (data.team_to_par) myTotal = data.team_to_par;
         });
 
     // Fetch team summary and populate dropdown
@@ -40,6 +39,23 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
+    function setActiveTab(tab) {
+        activeTab = tab;
+        myTab.classList.toggle("active", tab === "mine");
+        theirTab.classList.toggle("active", tab === "theirs");
+        vsTab.classList.toggle("active", tab === "vs");
+    }
+
+    // Intercept Their Team trigger click when vs is active
+    theirTab.addEventListener("click", function (e) {
+        if (activeTab === "vs" && theirCards) {
+            e.stopImmediatePropagation();
+            dropdown.classList.remove("open");
+            setActiveTab("theirs");
+            renderCards(theirCards);
+        }
+    }, true);
+
     // Handle dropdown option selection
     optionsContainer.addEventListener("click", function (e) {
         var opt = e.target.closest(".custom-dropdown-option");
@@ -48,9 +64,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var label = opt.textContent;
 
         // Update active states
-        myTab.classList.remove("active");
-        theirTab.classList.add("active");
+        setActiveTab("theirs");
         ddText.textContent = label;
+        myTab.textContent = "My Team (" + myTotal + ")";
 
         // Mark selected option
         optionsContainer.querySelectorAll(".custom-dropdown-option").forEach(function (o) {
@@ -59,9 +75,6 @@ document.addEventListener("DOMContentLoaded", function () {
         opt.classList.add("selected");
         dropdown.classList.remove("open");
 
-        // Show SBS toggle
-        sbsToggleRow.style.display = "";
-
         // Fetch and render the selected user's team
         fetch("/api/team/" + userId)
             .then(function (r) { return r.json(); })
@@ -69,11 +82,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 theirCards = data.cards;
                 theirDisplayName = data.display_name;
                 theirTotal = data.team_to_par;
-                if (sbsActive && myCards) {
-                    updateTotalForSbs();
+                if (activeTab === "vs" && myCards) {
                     renderSideBySide(myCards, theirCards);
                 } else {
-                    if (squadTotal) squadTotal.textContent = data.team_to_par;
                     renderCards(data.cards);
                 }
             });
@@ -81,42 +92,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Handle My Team tab click
     myTab.addEventListener("click", function () {
-        myTab.classList.add("active");
-        theirTab.classList.remove("active");
+        setActiveTab("mine");
+        myTab.textContent = "My Team";
         ddText.textContent = "Their Team";
         optionsContainer.querySelectorAll(".custom-dropdown-option").forEach(function (o) {
             o.classList.remove("selected");
         });
-        // Hide SBS toggle and reset state
-        sbsToggleRow.style.display = "none";
-        sbsToggle.classList.remove("active");
-        sbsActive = false;
         theirCards = null;
         if (cardsContainer) cardsContainer.innerHTML = originalCardsHTML;
-        if (squadTotal) squadTotal.textContent = originalTotal;
         bindOwnershipTriggers();
     });
 
-    // Handle SBS toggle click
-    sbsToggle.addEventListener("click", function () {
-        if (!myCards || !theirCards) return;
-        sbsActive = !sbsActive;
-        if (sbsActive) {
-            sbsToggle.classList.add("active");
-            updateTotalForSbs();
-            renderSideBySide(myCards, theirCards);
-        } else {
-            sbsToggle.classList.remove("active");
-            if (squadTotal) squadTotal.textContent = theirTotal;
-            renderCards(theirCards);
+    // Handle vs tab click
+    vsTab.addEventListener("click", function (e) {
+        if (!theirCards) {
+            e.stopPropagation();
+            document.querySelectorAll(".custom-dropdown.open").forEach(function (other) {
+                if (other !== dropdown) other.classList.remove("open");
+            });
+            dropdown.classList.toggle("open");
+            return;
         }
+        if (!myCards) return;
+        setActiveTab("vs");
+        renderSideBySide(myCards, theirCards);
     });
-
-    function updateTotalForSbs() {
-        if (squadTotal) {
-            squadTotal.textContent = originalTotal + "  vs  " + theirDisplayName + " " + theirTotal;
-        }
-    }
 
     function renderSideBySide(mine, theirs) {
         if (!cardsContainer) return;

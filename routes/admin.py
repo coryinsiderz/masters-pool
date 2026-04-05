@@ -18,10 +18,14 @@ def admin():
     if not is_admin():
         return "Forbidden", 403
     from app import get_db_connection
+    import psycopg2.extras
     conn = get_db_connection()
     golfers = get_all_golfers(conn)
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT id, username, paid FROM users ORDER BY username")
+        users = cur.fetchall()
     conn.close()
-    return render_template("admin.html", golfers=golfers)
+    return render_template("admin.html", golfers=golfers, users=users)
 
 
 @admin_bp.route("/admin/golfer", methods=["POST"])
@@ -272,6 +276,24 @@ def set_poll_interval():
     label = {60: "1 min", 300: "5 min", 7500: "Off"}.get(interval, f"{interval}s")
     flash(f"Polling interval set to {label}.", "success")
     return redirect(url_for("admin.admin"))
+
+
+@admin_bp.route("/admin/toggle-paid/<int:user_id>", methods=["POST"])
+def toggle_paid(user_id):
+    if not is_admin():
+        return "Forbidden", 403
+    from app import get_db_connection
+    conn = get_db_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE users SET paid = NOT COALESCE(paid, FALSE) WHERE id = %s RETURNING paid",
+            (user_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+    if row is None:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"paid": row[0]})
 
 
 @admin_bp.route("/admin/reset-for-testing", methods=["POST"])

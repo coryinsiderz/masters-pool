@@ -94,7 +94,7 @@ def build_leaderboard(conn):
     # Get all users who have picks
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            """SELECT DISTINCT u.id AS user_id, u.username
+            """SELECT DISTINCT u.id AS user_id, u.username, u.paid
                FROM users u
                JOIN picks p ON p.user_id = u.id
                ORDER BY u.username"""
@@ -125,6 +125,7 @@ def build_leaderboard(conn):
         standings.append({
             "user_id": user["user_id"],
             "username": user["username"],
+            "paid": user.get("paid", False),
             "team_total": result["team_total"],
             "counting_golfers": result["counting_golfers"],
             "bench_golfers": result["bench_golfers"],
