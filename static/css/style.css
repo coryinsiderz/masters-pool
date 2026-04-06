@@ -1629,6 +1629,10 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     color: var(--augusta-gold);
 }
 
+.pl-hdr-active {
+    color: var(--augusta-gold);
+}
+
 .pl-divider {
     height: 1px;
     background: rgba(200, 169, 81, 0.3);
@@ -1667,7 +1671,7 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     }
 
     .proj-chart-wrap {
-        height: 70vh;
+        height: 85vh;
     }
 
     .proj-legend {
