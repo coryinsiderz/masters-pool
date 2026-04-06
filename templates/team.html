@@ -11,7 +11,7 @@
     {% if current_user and current_user.paid %}
     <span class="payment-status paid">Paid</span>
     {% else %}
-    <a href="#" onclick="openVenmo(event)" class="payment-status">Pay @csbaltz $10</a>
+    <a href="#" onclick="openVenmo(event)" class="payment-status">Pay @csbaltz $10 on Venmo</a>
     {% endif %}
 
     {% if not picks_locked %}
@@ -72,8 +72,8 @@
 <script>
 function openVenmo(e) {
     e.preventDefault();
-    var appUrl = 'venmo://paycharge?txn=pay&recipients=csbaltz&amount=10&note=BaltzMastersPool';
-    var webUrl = 'https://venmo.com/csbaltz?txn=pay&amount=10&note=BaltzMastersPool';
+    var appUrl = 'venmo://paycharge?txn=pay&recipients=csbaltz';
+    var webUrl = 'https://venmo.com/csbaltz?txn=pay';
 
     var now = Date.now();
     window.location = appUrl;
