@@ -320,6 +320,74 @@ def api_match_dg_names():
     return jsonify(result)
 
 
+@admin_bp.route("/api/admin/fetch-projections-now", methods=["POST"])
+def api_fetch_projections_now():
+    """Manually trigger a live projections fetch + team computation."""
+    if not is_admin():
+        return jsonify({"error": "Forbidden"}), 403
+    from app import get_db_connection
+    from services.projections import fetch_live_projections, compute_team_projections
+    conn = get_db_connection()
+    fetch_result = fetch_live_projections(conn)
+    teams = {}
+    if fetch_result.get("matched", 0) > 0:
+        teams = compute_team_projections(conn)
+    conn.close()
+    return jsonify({
+        "fetch": fetch_result,
+        "teams_computed": len(teams),
+    })
+
+
+@admin_bp.route("/api/admin/projections-polling", methods=["POST"])
+def api_projections_polling_toggle():
+    """Enable or disable projections polling. Body: {"enabled": true/false}"""
+    if not is_admin():
+        return jsonify({"error": "Forbidden"}), 403
+    from app import scheduler
+    import json
+    data = request.get_json(force=True)
+    enabled = data.get("enabled", False)
+
+    if scheduler and scheduler.running:
+        existing = scheduler.get_job("projections_poll")
+        if enabled and not existing:
+            from app import _projections_poll_job
+            from config import Config
+            interval = Config.PROJECTIONS_POLL_INTERVAL
+            scheduler.add_job(
+                _projections_poll_job,
+                "interval",
+                seconds=interval,
+                id="projections_poll",
+                replace_existing=True,
+            )
+            return jsonify({"status": "enabled", "interval": interval})
+        elif not enabled and existing:
+            scheduler.remove_job("projections_poll")
+            return jsonify({"status": "disabled"})
+        elif enabled and existing:
+            return jsonify({"status": "already_enabled"})
+        else:
+            return jsonify({"status": "already_disabled"})
+    return jsonify({"error": "Scheduler not running"}), 500
+
+
+@admin_bp.route("/api/admin/projections-polling-status")
+def api_projections_polling_status():
+    if not is_admin():
+        return jsonify({"error": "Forbidden"}), 403
+    from app import scheduler
+    running = False
+    interval = 0
+    if scheduler and scheduler.running:
+        job = scheduler.get_job("projections_poll")
+        if job:
+            running = True
+            interval = int(job.trigger.interval.total_seconds())
+    return jsonify({"running": running, "interval": interval})
+
+
 @admin_bp.route("/admin/reset-for-testing", methods=["POST"])
 def reset_for_testing():
     """Temporary route for Valero testing. Delete before go-live."""

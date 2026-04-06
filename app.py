@@ -38,6 +38,45 @@ def _poll_job():
     logger.info("Scheduler poll %s", "succeeded" if success else "failed")
 
 
+# Tournament window for projections polling (EDT = UTC-4)
+_TOURNEY_START = datetime(2026, 4, 9, 7, 30, tzinfo=timezone(timedelta(hours=-4)))
+_TOURNEY_END = datetime(2026, 4, 12, 19, 0, tzinfo=timezone(timedelta(hours=-4)))
+_PLAY_START_HOUR = 7   # 7:30 AM ET (we use 7 to catch early)
+_PLAY_END_HOUR = 19    # 7:00 PM ET
+
+
+def _projections_poll_job():
+    """Background job that fetches live projections and computes team totals."""
+    now_et = datetime.now(timezone(timedelta(hours=-4)))
+
+    # Only run during tournament week
+    if now_et < _TOURNEY_START or now_et > _TOURNEY_END:
+        logger.debug("Projections poll skipped — outside tournament window")
+        return
+
+    logger.info("Projections poll starting at %s", now_et.isoformat())
+
+    try:
+        from services.projections import fetch_live_projections, compute_team_projections
+        conn = get_db_connection()
+
+        # Fetch latest projections from API
+        result = fetch_live_projections(conn)
+        logger.info("Projections fetch: %d matched, %d unmatched",
+                     result.get("matched", 0), result.get("unmatched", 0))
+
+        # Compute team projections using the snapshot we just inserted
+        if result.get("matched", 0) > 0:
+            teams = compute_team_projections(conn)
+            logger.info("Team projections computed for %d users", len(teams))
+        else:
+            logger.warning("No projections matched — skipping team computation")
+
+        conn.close()
+    except Exception:
+        logger.exception("Projections poll failed")
+
+
 def _should_start_scheduler():
     """Determine if we should start the scheduler in this process."""
     if Config.ENABLE_POLLING != "1":
@@ -69,8 +108,21 @@ def start_scheduler(interval=None):
         id="espn_poll",
         replace_existing=True,
     )
+
+    # Add projections polling if enabled
+    if Config.ENABLE_PROJECTIONS_POLLING == "1":
+        proj_interval = Config.PROJECTIONS_POLL_INTERVAL
+        scheduler.add_job(
+            _projections_poll_job,
+            "interval",
+            seconds=proj_interval,
+            id="projections_poll",
+            replace_existing=True,
+        )
+        logger.info("Projections polling enabled with %d second interval", proj_interval)
+
     scheduler.start()
-    logger.info("Scheduler started with %d second interval", interval)
+    logger.info("Scheduler started with ESPN %d second interval", interval)
 
 
 @app.before_request
