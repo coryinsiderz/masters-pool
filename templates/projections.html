@@ -133,8 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var liveLinePlugin = {
         id: "liveLine",
         afterDraw: function (chart) {
-            // TEMPORARY: fixed timestamp for testing. Revert to Date.now() before go-live.
-            var now = new Date("2026-04-11T06:00:00-04:00").getTime();
+            var now = Date.now();
             if (now <= TOURNEY_START || now >= TOURNEY_END) return;
 
             var xScale = chart.scales.x;
