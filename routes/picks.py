@@ -15,6 +15,7 @@ TIER_NAMES = {
     4: "Maybe",
     5: "Meh",
     6: "Do You Believe in Miracles",
+    7: "X",
 }
 
 

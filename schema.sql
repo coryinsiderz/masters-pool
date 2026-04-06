@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS golfers (
     id SERIAL PRIMARY KEY,
     espn_id VARCHAR(20),
     name VARCHAR(100) NOT NULL,
-    tier INTEGER NOT NULL CHECK (tier >= 1 AND tier <= 6),
+    tier INTEGER NOT NULL CHECK (tier >= 1 AND tier <= 7),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS picks (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
     golfer_id INTEGER NOT NULL REFERENCES golfers(id),
-    tier INTEGER NOT NULL CHECK (tier >= 1 AND tier <= 6),
+    tier INTEGER NOT NULL CHECK (tier >= 1 AND tier <= 7),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(user_id, tier)
