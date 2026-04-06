@@ -903,6 +903,10 @@ input:-webkit-autofill:focus {
     -webkit-overflow-scrolling: touch;
 }
 
+#leaderboard {
+    border-right: 1px solid var(--grid-line);
+}
+
 .sticky-col {
     position: sticky;
     left: 0;
