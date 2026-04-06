@@ -1534,14 +1534,105 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     padding-right: 10px;
 }
 
+.proj-layout {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
 .proj-chart-wrap {
     position: relative;
     height: 60vh;
-    margin-top: 0.75rem;
+    flex: 3;
+    min-width: 0;
 }
 
 .proj-chart-wrap canvas {
     background: transparent;
+}
+
+.proj-legend {
+    flex: 1;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    padding: 0.75rem;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+.pl-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.2rem 0;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.7rem;
+    color: var(--augusta-cream);
+}
+
+.pl-line {
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    flex-shrink: 0;
+}
+
+.pl-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pl-me {
+    color: var(--augusta-gold);
+    font-weight: 700;
+}
+
+.pl-score {
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--augusta-gold);
+    font-weight: 700;
+    min-width: 36px;
+}
+
+.pl-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0 0 0.3rem;
+    margin-bottom: 0.3rem;
+    border-bottom: 1px solid var(--panel-border);
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.6rem;
+    color: var(--augusta-cream);
+}
+
+.pl-hdr-name {
+    flex: 1;
+    cursor: pointer;
+    user-select: none;
+    padding-left: 17px;
+}
+
+.pl-hdr-score {
+    flex-shrink: 0;
+    text-align: right;
+    min-width: 36px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.pl-hdr-name:hover,
+.pl-hdr-score:hover {
+    color: var(--augusta-gold);
+}
+
+.pl-divider {
+    height: 1px;
+    background: rgba(200, 169, 81, 0.3);
+    margin: 0.3rem 0;
 }
 
 .chosen-option {
@@ -1571,8 +1662,16 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
 }
 
 @media (max-width: 768px) {
+    .proj-layout {
+        flex-direction: column;
+    }
+
     .proj-chart-wrap {
-        height: 50vh;
+        height: 70vh;
+    }
+
+    .proj-legend {
+        max-height: 30vh;
     }
 }
 

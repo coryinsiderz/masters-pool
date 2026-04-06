@@ -26,8 +26,11 @@
         </div>
     </div>
 
-    <div class="proj-chart-wrap" id="chart-wrap">
-        <canvas id="projections-chart"></canvas>
+    <div class="proj-layout" id="chart-wrap">
+        <div class="proj-chart-wrap">
+            <canvas id="projections-chart"></canvas>
+        </div>
+        <div class="proj-legend" id="proj-legend"></div>
     </div>
 
     <p class="empty-state" id="proj-empty" style="display:none">No projection data yet. Check back once the tournament begins.</p>
@@ -52,8 +55,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var chart = null;
     var allData = null;
+    var snapshotTimestamps = []; // raw ISO strings for "Now" line
     var activeTab = "justme";
     var chosenUserIds = {};
+    var legendSort = "score"; // "score" or "name"
+    var legendSortAsc = true;  // true = best first for score, A-Z for name
 
     // --- Tab switching ---
     function setTab(tab) {
@@ -70,9 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tabJustMe.addEventListener("click", function () { setTab("justme"); });
     tabEveryone.addEventListener("click", function () { setTab("everyone"); });
 
-    // --- Chosen Ones dropdown-as-tab (matches Their Team pattern) ---
-    // app.js handles the dropdown open/close toggle via its global
-    // .custom-dropdown handler. We only manage tab state here.
+    // app.js handles dropdown open/close; we only manage tab state
     chosenTrigger.addEventListener("click", function () {
         if (activeTab !== "chosen") {
             setTab("chosen");
@@ -104,6 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
             buildChart(data);
+            updateLegend();
         })
         .catch(function () {
             chartWrap.style.display = "none";
@@ -119,9 +124,48 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // --- "Now" line plugin ---
+    var nowLinePlugin = {
+        id: "nowLine",
+        afterDraw: function (chart) {
+            if (!snapshotTimestamps.length) return;
+            var now = Date.now();
+            var times = snapshotTimestamps.map(function (s) { return new Date(s).getTime(); });
+            var tMin = times[0];
+            var tMax = times[times.length - 1];
+            if (now <= tMin || now >= tMax) return; // outside range
+
+            var xScale = chart.scales.x;
+            // Interpolate pixel position
+            var frac = (now - tMin) / (tMax - tMin);
+            var xPx = xScale.left + frac * (xScale.width);
+            var yTop = chart.scales.y.top;
+            var yBot = chart.scales.y.bottom;
+
+            var ctx = chart.ctx;
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = "#C8A951";
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(xPx, yTop);
+            ctx.lineTo(xPx, yBot);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // "Now" label
+            ctx.fillStyle = "#FFF8E7";
+            ctx.font = "10px 'Libre Baskerville', Georgia, serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Now", xPx, yTop - 4);
+            ctx.restore();
+        }
+    };
+
     // --- Chart ---
     function buildChart(data) {
         var snapshots = data.snapshots;
+        snapshotTimestamps = snapshots.map(function (s) { return s.snapshot_time; });
         var labels = snapshots.map(function (s) { return formatTime(s.snapshot_time); });
 
         // Collect all user IDs across snapshots
@@ -136,7 +180,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Fill data arrays (null for missing snapshots)
         var userIds = Object.keys(userMap);
-        snapshots.forEach(function (snap, idx) {
+        snapshots.forEach(function (snap) {
             var teamMap = {};
             snap.teams.forEach(function (t) { teamMap[t.user_id] = t.projected_total; });
             userIds.forEach(function (uid) {
@@ -155,10 +199,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 userId: parseInt(uid),
                 borderColor: isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)",
                 borderWidth: isMe ? 3 : 1,
-                pointRadius: isMe ? 4 : 0,
-                pointHoverRadius: isMe ? 6 : 3,
-                pointBackgroundColor: isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)",
-                pointBorderColor: isMe ? "#C8A951" : "transparent",
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                pointHitRadius: 12,
+                pointBackgroundColor: "transparent",
+                pointBorderColor: "transparent",
                 fill: false,
                 tension: 0.3,
                 order: isMe ? 0 : 1,
@@ -170,6 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
         chart = new Chart(ctx, {
             type: "line",
             data: { labels: labels, datasets: datasets },
+            plugins: [nowLinePlugin],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -177,17 +223,28 @@ document.addEventListener("DOMContentLoaded", function () {
                     legend: { display: false },
                     tooltip: {
                         mode: "nearest",
-                        intersect: true,
+                        intersect: false,
                         callbacks: {
                             title: function (items) {
+                                if (!items.length) return "";
+                                var idx = items[0].dataIndex;
+                                if (snapshotTimestamps[idx]) {
+                                    var d = new Date(snapshotTimestamps[idx]);
+                                    var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+                                    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+                                    var h = d.getHours();
+                                    var ampm = h >= 12 ? "pm" : "am";
+                                    h = h % 12 || 12;
+                                    var min = d.getMinutes();
+                                    var minStr = min < 10 ? "0" + min : String(min);
+                                    return days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate() + ", " + h + ":" + minStr + ampm;
+                                }
                                 return items[0].label;
                             },
                             label: function (ctx) {
                                 var val = ctx.parsed.y;
-                                var ds = ctx.dataset;
-                                var name = ds.label;
-                                var formatted = val === 0 ? "E" : (val > 0 ? "+" + val : String(val));
-                                // Compute rank at this snapshot
+                                var name = ctx.dataset.label;
+                                var formatted = val === 0 ? "E" : (val > 0 ? "+" + val.toFixed(1) : val.toFixed(1));
                                 var snapIdx = ctx.dataIndex;
                                 var allVals = [];
                                 chart.data.datasets.forEach(function (d) {
@@ -210,12 +267,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 scales: {
                     x: {
-                        ticks: {
-                            color: "#FFF8E7",
-                            font: { family: "'Libre Baskerville', Georgia, serif", size: 11 },
-                            maxRotation: 45,
-                        },
-                        grid: { color: "rgba(200, 169, 81, 0.15)" },
+                        display: false,
                     },
                     y: {
                         reverse: true,
@@ -246,54 +298,153 @@ document.addEventListener("DOMContentLoaded", function () {
             var isMe = ds.userId === CURRENT_USER_ID;
             if (activeTab === "justme") {
                 ds.hidden = !isMe;
-                if (isMe) {
-                    ds.borderColor = "#C8A951";
-                    ds.borderWidth = 3;
-                    ds.pointRadius = 4;
-                    ds.pointBackgroundColor = "#C8A951";
-                    ds.pointBorderColor = "#C8A951";
-                }
+                ds.borderColor = isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)";
+                ds.borderWidth = isMe ? 3 : 1;
             } else if (activeTab === "chosen") {
                 var isChosen = !!chosenUserIds[ds.userId];
                 ds.hidden = false;
                 if (isMe) {
                     ds.borderColor = "#C8A951";
                     ds.borderWidth = 3;
-                    ds.pointRadius = 4;
-                    ds.pointBackgroundColor = "#C8A951";
-                    ds.pointBorderColor = "#C8A951";
                 } else if (isChosen) {
                     ds.borderColor = "rgba(255, 248, 231, 0.7)";
                     ds.borderWidth = 2;
-                    ds.pointRadius = 2;
-                    ds.pointBackgroundColor = "rgba(255, 248, 231, 0.7)";
-                    ds.pointBorderColor = "transparent";
                 } else {
                     ds.borderColor = "rgba(255, 248, 231, 0.15)";
                     ds.borderWidth = 1;
-                    ds.pointRadius = 0;
-                    ds.pointBackgroundColor = "transparent";
-                    ds.pointBorderColor = "transparent";
                 }
             } else {
-                // everyone
                 ds.hidden = false;
-                if (isMe) {
-                    ds.borderColor = "#C8A951";
-                    ds.borderWidth = 3;
-                    ds.pointRadius = 4;
-                    ds.pointBackgroundColor = "#C8A951";
-                    ds.pointBorderColor = "#C8A951";
-                } else {
-                    ds.borderColor = "rgba(255, 248, 231, 0.25)";
-                    ds.borderWidth = 1;
-                    ds.pointRadius = 0;
-                    ds.pointBackgroundColor = "transparent";
-                    ds.pointBorderColor = "transparent";
-                }
+                ds.borderColor = isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)";
+                ds.borderWidth = isMe ? 3 : 1;
             }
+            // Always no dots
+            ds.pointRadius = 0;
+            ds.pointHoverRadius = 0;
         });
         chart.update();
+        updateLegend();
+    }
+
+    // --- Legend ---
+    function updateLegend() {
+        var legend = document.getElementById("proj-legend");
+        if (!chart) { legend.innerHTML = ""; return; }
+
+        // Collect visible datasets
+        var entries = [];
+        chart.data.datasets.forEach(function (ds) {
+            if (ds.hidden) return;
+            var isMe = ds.userId === CURRENT_USER_ID;
+            var isChosen = !!chosenUserIds[ds.userId];
+            var lastVal = null;
+            for (var i = ds.data.length - 1; i >= 0; i--) {
+                if (ds.data[i] !== null && ds.data[i] !== undefined) {
+                    lastVal = ds.data[i];
+                    break;
+                }
+            }
+            entries.push({
+                name: ds.label,
+                val: lastVal,
+                color: ds.borderColor,
+                isMe: isMe,
+                isChosen: isChosen,
+                userId: ds.userId,
+            });
+        });
+
+        // Sort function
+        function sortEntries(arr) {
+            arr.sort(function (a, b) {
+                if (legendSort === "name") {
+                    var cmp = a.name.localeCompare(b.name);
+                    return legendSortAsc ? cmp : -cmp;
+                }
+                // score sort
+                if (a.val === null && b.val === null) return 0;
+                if (a.val === null) return 1;
+                if (b.val === null) return -1;
+                return legendSortAsc ? a.val - b.val : b.val - a.val;
+            });
+        }
+
+        var html = "";
+
+        // Header row
+        html += '<div class="pl-header">';
+        html += '<span class="pl-hdr-name" id="pl-sort-name">Name';
+        html += legendSort === "name" ? (legendSortAsc ? ' \u25B2' : ' \u25BC') : '';
+        html += '</span>';
+        html += '<span class="pl-hdr-score" id="pl-sort-score">Proj';
+        html += legendSort === "score" ? (legendSortAsc ? ' \u25B2' : ' \u25BC') : '';
+        html += '</span>';
+        html += '</div>';
+
+        // In Chosen Ones mode: split into chosen+me vs others
+        if (activeTab === "chosen") {
+            var chosenGroup = [];
+            var otherGroup = [];
+            entries.forEach(function (e) {
+                if (e.isMe || e.isChosen) {
+                    chosenGroup.push(e);
+                } else {
+                    otherGroup.push(e);
+                }
+            });
+            sortEntries(chosenGroup);
+            sortEntries(otherGroup);
+
+            chosenGroup.forEach(function (e) { html += renderEntry(e); });
+            if (chosenGroup.length > 0 && otherGroup.length > 0) {
+                html += '<div class="pl-divider"></div>';
+            }
+            otherGroup.forEach(function (e) { html += renderEntry(e); });
+        } else {
+            sortEntries(entries);
+            entries.forEach(function (e) { html += renderEntry(e); });
+        }
+
+        legend.innerHTML = html;
+
+        // Bind sort header clicks
+        var sortName = document.getElementById("pl-sort-name");
+        var sortScore = document.getElementById("pl-sort-score");
+        if (sortName) sortName.addEventListener("click", function () {
+            if (legendSort === "name") { legendSortAsc = !legendSortAsc; }
+            else { legendSort = "name"; legendSortAsc = true; }
+            updateLegend();
+        });
+        if (sortScore) sortScore.addEventListener("click", function () {
+            if (legendSort === "score") { legendSortAsc = !legendSortAsc; }
+            else { legendSort = "score"; legendSortAsc = true; }
+            updateLegend();
+        });
+    }
+
+    function renderEntry(e) {
+        var formatted = formatScore(e.val);
+        var nameClass = e.isMe ? "pl-name pl-me" : "pl-name";
+        var html = '<div class="pl-entry">';
+        html += '<span class="pl-line" style="background:' + e.color + '"></span>';
+        html += '<span class="' + nameClass + '">' + esc(e.name) + '</span>';
+        html += '<span class="pl-score">' + formatted + '</span>';
+        html += '</div>';
+        return html;
+    }
+
+    function formatScore(val) {
+        if (val === null) return "--";
+        if (val === 0) return "E";
+        if (val > 0) return "+" + val.toFixed(1);
+        return val.toFixed(1);
+    }
+
+    function esc(str) {
+        if (str === null || str === undefined) return "--";
+        var d = document.createElement("div");
+        d.textContent = String(str);
+        return d.innerHTML;
     }
 
     function formatTime(isoStr) {
