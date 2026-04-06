@@ -39,6 +39,7 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 <script>
 var CURRENT_USER_ID = {{ current_user.id }};
 </script>
@@ -55,8 +56,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var chart = null;
     var allData = null;
-    var snapshotTimestamps = []; // raw ISO strings for "Live" line
     var activeTab = "justme";
+
+    // Tournament window: Thu Apr 9 7:30 AM ET to Sun Apr 12 7:00 PM ET (2026)
+    // ET = UTC-4 during EDT
+    var TOURNEY_START = new Date("2026-04-09T07:30:00-04:00").getTime();
+    var TOURNEY_END = new Date("2026-04-12T19:00:00-04:00").getTime();
     var chosenUserIds = {};
     var legendSort = "score"; // "score" or "name"
     var legendSortAsc = true;  // true = best first for score, A-Z for name
@@ -128,16 +133,11 @@ document.addEventListener("DOMContentLoaded", function () {
     var liveLinePlugin = {
         id: "liveLine",
         afterDraw: function (chart) {
-            if (!snapshotTimestamps.length) return;
             var now = Date.now();
-            var times = snapshotTimestamps.map(function (s) { return new Date(s).getTime(); });
-            var tMin = times[0];
-            var tMax = times[times.length - 1];
-            if (now <= tMin || now >= tMax) return;
+            if (now <= TOURNEY_START || now >= TOURNEY_END) return;
 
             var xScale = chart.scales.x;
-            var frac = (now - tMin) / (tMax - tMin);
-            var xPx = xScale.left + frac * (xScale.width);
+            var xPx = xScale.getPixelForValue(now);
             var yTop = chart.scales.y.top;
             var yBot = chart.scales.y.bottom;
 
@@ -162,8 +162,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // --- Chart ---
     function buildChart(data) {
         var snapshots = data.snapshots;
-        snapshotTimestamps = snapshots.map(function (s) { return s.snapshot_time; });
-        var labels = snapshots.map(function (s) { return formatTime(s.snapshot_time); });
 
         // Collect all user IDs across snapshots
         var userMap = {};
@@ -175,14 +173,17 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        // Fill data arrays (null for missing snapshots)
+        // Build {x: timestamp, y: value} data points per user
         var userIds = Object.keys(userMap);
         snapshots.forEach(function (snap) {
+            var ts = new Date(snap.snapshot_time).getTime();
             var teamMap = {};
             snap.teams.forEach(function (t) { teamMap[t.user_id] = t.projected_total; });
             userIds.forEach(function (uid) {
                 var val = teamMap[uid] !== undefined ? teamMap[uid] : null;
-                userMap[uid].data.push(val);
+                if (val !== null) {
+                    userMap[uid].data.push({ x: ts, y: val });
+                }
             });
         });
 
@@ -211,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var ctx = document.getElementById("projections-chart").getContext("2d");
         chart = new Chart(ctx, {
             type: "line",
-            data: { labels: labels, datasets: datasets },
+            data: { datasets: datasets },
             plugins: [liveLinePlugin],
             options: {
                 responsive: true,
@@ -224,29 +225,28 @@ document.addEventListener("DOMContentLoaded", function () {
                         callbacks: {
                             title: function (items) {
                                 if (!items.length) return "";
-                                var idx = items[0].dataIndex;
-                                if (snapshotTimestamps[idx]) {
-                                    var d = new Date(snapshotTimestamps[idx]);
-                                    var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-                                    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-                                    var h = d.getHours();
-                                    var ampm = h >= 12 ? "pm" : "am";
-                                    h = h % 12 || 12;
-                                    var min = d.getMinutes();
-                                    var minStr = min < 10 ? "0" + min : String(min);
-                                    return days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate() + ", " + h + ":" + minStr + ampm;
-                                }
-                                return items[0].label;
+                                var ts = items[0].parsed.x;
+                                var d = new Date(ts);
+                                var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+                                var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+                                var h = d.getHours();
+                                var ampm = h >= 12 ? "pm" : "am";
+                                h = h % 12 || 12;
+                                var min = d.getMinutes();
+                                var minStr = min < 10 ? "0" + min : String(min);
+                                return days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate() + ", " + h + ":" + minStr + ampm;
                             },
                             label: function (ctx) {
                                 var val = ctx.parsed.y;
                                 var name = ctx.dataset.label;
                                 var formatted = val === 0 ? "E" : (val > 0 ? "+" + val.toFixed(1) : val.toFixed(1));
-                                var snapIdx = ctx.dataIndex;
+                                // Rank at this snapshot
+                                var ts = ctx.parsed.x;
                                 var allVals = [];
                                 chart.data.datasets.forEach(function (d) {
-                                    var v = d.data[snapIdx];
-                                    if (v !== null && v !== undefined) allVals.push(v);
+                                    d.data.forEach(function (pt) {
+                                        if (pt.x === ts) allVals.push(pt.y);
+                                    });
                                 });
                                 allVals.sort(function (a, b) { return a - b; });
                                 var rank = allVals.indexOf(val) + 1;
@@ -264,7 +264,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 scales: {
                     x: {
+                        type: "time",
                         display: false,
+                        min: TOURNEY_START,
+                        max: TOURNEY_END,
                     },
                     y: {
                         reverse: true,
@@ -276,7 +279,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 return val > 0 ? "+" + val : String(val);
                             }
                         },
-                        grid: { color: "rgba(200, 169, 81, 0.15)" },
+                        grid: { display: false },
                         title: {
                             display: true,
                             text: "Projected To Par",
@@ -336,8 +339,9 @@ document.addEventListener("DOMContentLoaded", function () {
             var isChosen = !!chosenUserIds[ds.userId];
             var lastVal = null;
             for (var i = ds.data.length - 1; i >= 0; i--) {
-                if (ds.data[i] !== null && ds.data[i] !== undefined) {
-                    lastVal = ds.data[i];
+                var pt = ds.data[i];
+                if (pt && pt.y !== null && pt.y !== undefined) {
+                    lastVal = pt.y;
                     break;
                 }
             }
