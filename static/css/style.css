@@ -1529,6 +1529,11 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
 
 /* ── Projections chart ── */
 
+.proj-tabs .filter-btn {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
 .proj-chart-wrap {
     position: relative;
     height: 60vh;
