@@ -1,6 +1,7 @@
 import psycopg2.extras
 from flask import Blueprint, g, jsonify, redirect, render_template, url_for
 
+from config import Config
 from services.scoring import build_leaderboard
 
 leaderboard_bp = Blueprint("leaderboard", __name__)
@@ -115,11 +116,26 @@ def _sum_to_par(counting_golfers):
         return str(total)
 
 
+def _is_locked():
+    from datetime import datetime, timedelta, timezone
+    deadline = datetime.fromisoformat(Config.PICKS_DEADLINE)
+    now = datetime.now(timezone(timedelta(hours=-4)))
+    return now > deadline
+
+
 @leaderboard_bp.route("/leaderboard")
 @leaderboard_bp.route("/")
 def leaderboard():
     if not g.current_user:
         return redirect(url_for("auth.login"))
+    if not _is_locked():
+        return render_template(
+            "leaderboard.html",
+            standings=[],
+            total_users=0,
+            tier_names=TIER_NAMES,
+            current_round=0,
+        )
     from app import get_db_connection
     from models.tournament import get_tournament_state
     conn = get_db_connection()
@@ -140,6 +156,8 @@ def leaderboard():
 def api_leaderboard():
     if not g.current_user:
         return jsonify({"error": "unauthorized"}), 401
+    if not _is_locked():
+        return jsonify({"error": "Picks not yet locked"}), 403
     from app import get_db_connection
     conn = get_db_connection()
     standings, total_users = _build_full_leaderboard(conn)

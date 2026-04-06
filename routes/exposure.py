@@ -1,5 +1,9 @@
+from datetime import datetime, timedelta, timezone
+
 import psycopg2.extras
-from flask import Blueprint, g, redirect, render_template, url_for
+from flask import Blueprint, flash, g, redirect, render_template, url_for
+
+from config import Config
 
 exposure_bp = Blueprint("exposure", __name__)
 
@@ -14,10 +18,19 @@ TIER_NAMES = {
 }
 
 
+def _is_locked():
+    deadline = datetime.fromisoformat(Config.PICKS_DEADLINE)
+    now = datetime.now(timezone(timedelta(hours=-4)))
+    return now > deadline
+
+
 @exposure_bp.route("/exposure")
 def exposure():
     if not g.current_user:
         return redirect(url_for("auth.login"))
+    if not _is_locked():
+        flash("Ownership data available after picks lock.", "error")
+        return redirect(url_for("picks.picks"))
 
     from app import get_db_connection
     conn = get_db_connection()
