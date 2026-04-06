@@ -54,7 +54,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="reg-recovery">Recovery Question</label>
+                <label for="reg-recovery">Recovery Question Answer</label>
                 <input type="text" id="reg-recovery" name="recovery_contact" placeholder="Who's the goat?" autocomplete="off">
             </div>
             <div class="modal-buttons">
@@ -116,10 +116,6 @@
         regOverlay.style.display = 'none';
     });
 
-    regOverlay.addEventListener('click', function(e) {
-        if (e.target === regOverlay) regOverlay.style.display = 'none';
-    });
-
     // ── Forgot password modal ──
     var overlay = document.getElementById('forgot-modal-overlay');
     var trigger = document.getElementById('forgot-trigger');
@@ -145,10 +141,6 @@
 
     closeBtn.addEventListener('click', function() {
         overlay.style.display = 'none';
-    });
-
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) overlay.style.display = 'none';
     });
 
     verifyBtn.addEventListener('click', function() {

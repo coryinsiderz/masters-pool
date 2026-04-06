@@ -230,6 +230,24 @@ def set_poll_interval():
     return redirect(url_for("admin.admin"))
 
 
+@admin_bp.route("/admin/user/<int:user_id>/delete", methods=["POST"])
+def delete_user(user_id):
+    if not is_admin():
+        return "Forbidden", 403
+    if user_id == 1:
+        flash("Cannot delete the admin user.", "error")
+        return redirect(url_for("admin.admin"))
+    from app import get_db_connection
+    conn = get_db_connection()
+    with conn.cursor() as cur:
+        cur.execute("DELETE FROM team_projections WHERE user_id = %s", (user_id,))
+        cur.execute("DELETE FROM picks WHERE user_id = %s", (user_id,))
+        cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    conn.close()
+    flash("User deleted.", "success")
+    return redirect(url_for("admin.admin"))
+
+
 @admin_bp.route("/admin/toggle-paid/<int:user_id>", methods=["POST"])
 def toggle_paid(user_id):
     if not is_admin():

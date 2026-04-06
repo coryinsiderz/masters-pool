@@ -111,6 +111,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Paid</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -121,6 +122,13 @@
                         <button class="paid-toggle" data-user-id="{{ u.id }}" style="background:none;border:none;cursor:pointer;font-size:1.1rem">
                             {% if u.paid %}<span style="color:var(--augusta-gold)">&#10003;</span>{% else %}<span style="color:var(--augusta-cream)">&#10007;</span>{% endif %}
                         </button>
+                    </td>
+                    <td>
+                        {% if u.id != 1 %}
+                        <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.id) }}" class="inline-form">
+                            <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                        </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
