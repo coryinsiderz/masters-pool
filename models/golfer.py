@@ -12,7 +12,7 @@ def create_golfer(conn, name, tier, espn_id=None):
 
 def get_all_golfers(conn):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("SELECT * FROM golfers ORDER BY tier, name")
+        cur.execute("SELECT * FROM golfers ORDER BY tier, id")
         return cur.fetchall()
 
 
