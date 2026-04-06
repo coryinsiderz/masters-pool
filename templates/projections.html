@@ -160,43 +160,66 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // --- Chart ---
+    // userMeta stores per-user info across datasets: {userId: {name, actualData, projData, lastActual, lastProj}}
+    var userMeta = {};
+
     function buildChart(data) {
         var snapshots = data.snapshots;
 
-        // Collect all user IDs across snapshots
-        var userMap = {};
+        // Collect per-user actual and projected time-series
+        var tempMap = {};
         snapshots.forEach(function (snap) {
             snap.teams.forEach(function (t) {
-                if (!userMap[t.user_id]) {
-                    userMap[t.user_id] = { name: t.name, data: [] };
+                if (!tempMap[t.user_id]) {
+                    tempMap[t.user_id] = { name: t.name, actualData: [], projData: [] };
                 }
             });
         });
 
-        // Build {x: timestamp, y: value} data points per user
-        var userIds = Object.keys(userMap);
+        var userIds = Object.keys(tempMap);
         snapshots.forEach(function (snap) {
             var ts = new Date(snap.snapshot_time).getTime();
             var teamMap = {};
-            snap.teams.forEach(function (t) { teamMap[t.user_id] = t.projected_total; });
+            snap.teams.forEach(function (t) { teamMap[t.user_id] = t; });
             userIds.forEach(function (uid) {
-                var val = teamMap[uid] !== undefined ? teamMap[uid] : null;
-                if (val !== null) {
-                    userMap[uid].data.push({ x: ts, y: val });
+                var t = teamMap[uid];
+                if (!t) return;
+                if (t.actual_total !== null && t.actual_total !== undefined) {
+                    tempMap[uid].actualData.push({ x: ts, y: t.actual_total });
+                }
+                if (t.projected_total !== null && t.projected_total !== undefined) {
+                    tempMap[uid].projData.push({ x: ts, y: t.projected_total });
                 }
             });
         });
 
+        // Build userMeta and datasets: two datasets per user (actual + projected tail)
         var datasets = [];
         userIds.forEach(function (uid) {
-            var u = userMap[uid];
+            var u = tempMap[uid];
             var isMe = parseInt(uid) === data.current_user_id;
+            var baseColor = isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)";
+            var baseWidth = isMe ? 3 : 1;
+
+            // Last known actual and projected values
+            var lastActual = u.actualData.length ? u.actualData[u.actualData.length - 1].y : null;
+            var lastProj = u.projData.length ? u.projData[u.projData.length - 1].y : null;
+            var lastActualTs = u.actualData.length ? u.actualData[u.actualData.length - 1].x : null;
+
+            userMeta[parseInt(uid)] = {
+                name: u.name,
+                lastActual: lastActual,
+                lastProj: lastProj,
+            };
+
+            // Actual segment dataset
             datasets.push({
                 label: u.name,
-                data: u.data,
+                data: u.actualData,
                 userId: parseInt(uid),
-                borderColor: isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)",
-                borderWidth: isMe ? 3 : 1,
+                segmentType: "actual",
+                borderColor: baseColor,
+                borderWidth: baseWidth,
                 pointRadius: 0,
                 pointHoverRadius: 0,
                 pointHitRadius: 12,
@@ -204,6 +227,37 @@ document.addEventListener("DOMContentLoaded", function () {
                 pointBorderColor: "transparent",
                 fill: false,
                 tension: 0.3,
+                order: isMe ? 0 : 1,
+                hidden: !isMe,
+            });
+
+            // Projected tail dataset: from last actual point to projected finish at TOURNEY_END
+            var projTail = [];
+            if (lastActual !== null && lastProj !== null && lastActualTs) {
+                projTail.push({ x: lastActualTs, y: lastActual });
+                projTail.push({ x: TOURNEY_END, y: lastProj });
+            } else if (lastProj !== null && u.projData.length) {
+                // No actuals yet — show projected as a single point at latest snapshot
+                var lastProjTs = u.projData[u.projData.length - 1].x;
+                projTail.push({ x: lastProjTs, y: lastProj });
+                projTail.push({ x: TOURNEY_END, y: lastProj });
+            }
+
+            datasets.push({
+                label: u.name + " (proj)",
+                data: projTail,
+                userId: parseInt(uid),
+                segmentType: "projected",
+                borderColor: baseColor,
+                borderWidth: Math.max(1, baseWidth - 1),
+                borderDash: [],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                pointHitRadius: 12,
+                pointBackgroundColor: "transparent",
+                pointBorderColor: "transparent",
+                fill: false,
+                tension: 0,
                 order: isMe ? 0 : 1,
                 hidden: !isMe,
             });
@@ -222,6 +276,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     tooltip: {
                         mode: "nearest",
                         intersect: false,
+                        filter: function (item) {
+                            // Hide tooltip for projected tail datasets
+                            return item.dataset.segmentType !== "projected";
+                        },
                         callbacks: {
                             title: function (items) {
                                 if (!items.length) return "";
@@ -240,10 +298,10 @@ document.addEventListener("DOMContentLoaded", function () {
                                 var val = ctx.parsed.y;
                                 var name = ctx.dataset.label;
                                 var formatted = val === 0 ? "E" : (val > 0 ? "+" + val.toFixed(1) : val.toFixed(1));
-                                // Rank at this snapshot
                                 var ts = ctx.parsed.x;
                                 var allVals = [];
                                 chart.data.datasets.forEach(function (d) {
+                                    if (d.segmentType === "projected") return;
                                     d.data.forEach(function (pt) {
                                         if (pt.x === ts) allVals.push(pt.y);
                                     });
@@ -292,33 +350,48 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function getLineStyle(userId, segType) {
+        var isMe = userId === CURRENT_USER_ID;
+        var isChosen = !!chosenUserIds[userId];
+        var color, width;
+
+        if (activeTab === "justme") {
+            color = isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)";
+            width = isMe ? 3 : 1;
+        } else if (activeTab === "chosen") {
+            if (isMe) { color = "#C8A951"; width = 3; }
+            else if (isChosen) { color = "rgba(255, 248, 231, 0.7)"; width = 2; }
+            else { color = "rgba(255, 248, 231, 0.15)"; width = 1; }
+        } else {
+            color = isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)";
+            width = isMe ? 3 : 1;
+        }
+
+        if (segType === "projected") {
+            // Thinner and more transparent
+            width = Math.max(1, width - 1);
+            color = color.replace(/[\d.]+\)$/, function (m) {
+                return (parseFloat(m) * 0.7).toFixed(2) + ")";
+            });
+        }
+        return { color: color, width: width };
+    }
+
     function updateChart() {
         if (!chart) return;
         chart.data.datasets.forEach(function (ds) {
             var isMe = ds.userId === CURRENT_USER_ID;
+            var shouldHide;
             if (activeTab === "justme") {
-                ds.hidden = !isMe;
-                ds.borderColor = isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)";
-                ds.borderWidth = isMe ? 3 : 1;
-            } else if (activeTab === "chosen") {
-                var isChosen = !!chosenUserIds[ds.userId];
-                ds.hidden = false;
-                if (isMe) {
-                    ds.borderColor = "#C8A951";
-                    ds.borderWidth = 3;
-                } else if (isChosen) {
-                    ds.borderColor = "rgba(255, 248, 231, 0.7)";
-                    ds.borderWidth = 2;
-                } else {
-                    ds.borderColor = "rgba(255, 248, 231, 0.15)";
-                    ds.borderWidth = 1;
-                }
+                shouldHide = !isMe;
             } else {
-                ds.hidden = false;
-                ds.borderColor = isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)";
-                ds.borderWidth = isMe ? 3 : 1;
+                shouldHide = false;
             }
-            // Always no dots
+            ds.hidden = shouldHide;
+
+            var style = getLineStyle(ds.userId, ds.segmentType);
+            ds.borderColor = style.color;
+            ds.borderWidth = style.width;
             ds.pointRadius = 0;
             ds.pointHoverRadius = 0;
         });
@@ -331,23 +404,22 @@ document.addEventListener("DOMContentLoaded", function () {
         var legend = document.getElementById("proj-legend");
         if (!chart) { legend.innerHTML = ""; return; }
 
-        // Collect visible datasets
+        // Collect one entry per user from actual datasets only
+        var seen = {};
         var entries = [];
         chart.data.datasets.forEach(function (ds) {
-            if (ds.hidden) return;
+            if (ds.hidden || ds.segmentType === "projected") return;
+            if (seen[ds.userId]) return;
+            seen[ds.userId] = true;
+
             var isMe = ds.userId === CURRENT_USER_ID;
             var isChosen = !!chosenUserIds[ds.userId];
-            var lastVal = null;
-            for (var i = ds.data.length - 1; i >= 0; i--) {
-                var pt = ds.data[i];
-                if (pt && pt.y !== null && pt.y !== undefined) {
-                    lastVal = pt.y;
-                    break;
-                }
-            }
+            var meta = userMeta[ds.userId] || {};
+
             entries.push({
-                name: ds.label,
-                val: lastVal,
+                name: meta.name || ds.label,
+                lastActual: meta.lastActual,
+                lastProj: meta.lastProj,
                 color: ds.borderColor,
                 isMe: isMe,
                 isChosen: isChosen,
@@ -355,18 +427,18 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        // Sort function
+        // Sort function — sort by projected total
         function sortEntries(arr) {
             arr.sort(function (a, b) {
                 if (legendSort === "name") {
                     var cmp = a.name.localeCompare(b.name);
                     return legendSortAsc ? cmp : -cmp;
                 }
-                // score sort
-                if (a.val === null && b.val === null) return 0;
-                if (a.val === null) return 1;
-                if (b.val === null) return -1;
-                return legendSortAsc ? a.val - b.val : b.val - a.val;
+                var va = a.lastProj, vb = b.lastProj;
+                if (va === null && vb === null) return 0;
+                if (va === null) return 1;
+                if (vb === null) return -1;
+                return legendSortAsc ? va - vb : vb - va;
             });
         }
 
@@ -378,20 +450,15 @@ document.addEventListener("DOMContentLoaded", function () {
         html += '<span class="pl-hdr-score' + (legendSort === "score" ? ' pl-hdr-active' : '') + '" id="pl-sort-score">Proj</span>';
         html += '</div>';
 
-        // In Chosen Ones mode: split into chosen+me vs others
         if (activeTab === "chosen") {
             var chosenGroup = [];
             var otherGroup = [];
             entries.forEach(function (e) {
-                if (e.isMe || e.isChosen) {
-                    chosenGroup.push(e);
-                } else {
-                    otherGroup.push(e);
-                }
+                if (e.isMe || e.isChosen) { chosenGroup.push(e); }
+                else { otherGroup.push(e); }
             });
             sortEntries(chosenGroup);
             sortEntries(otherGroup);
-
             chosenGroup.forEach(function (e) { html += renderEntry(e); });
             if (chosenGroup.length > 0 && otherGroup.length > 0) {
                 html += '<div class="pl-divider"></div>';
@@ -420,12 +487,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderEntry(e) {
-        var formatted = formatScore(e.val);
         var nameClass = e.isMe ? "pl-name pl-me" : "pl-name";
+        var scoreText;
+        if (e.lastActual !== null) {
+            scoreText = formatScore(e.lastActual) + ' \u2192 ' + formatScore(e.lastProj);
+        } else if (e.lastProj !== null) {
+            scoreText = 'proj ' + formatScore(e.lastProj);
+        } else {
+            scoreText = '--';
+        }
         var html = '<div class="pl-entry">';
         html += '<span class="pl-line" style="background:' + e.color + '"></span>';
         html += '<span class="' + nameClass + '">' + esc(e.name) + '</span>';
-        html += '<span class="pl-score">' + formatted + '</span>';
+        html += '<span class="pl-score">' + scoreText + '</span>';
         html += '</div>';
         return html;
     }

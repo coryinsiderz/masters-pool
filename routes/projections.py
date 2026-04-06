@@ -42,7 +42,7 @@ def projections_history():
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """SELECT tp.snapshot_time, tp.user_id, tp.projected_total,
-                      u.username
+                      tp.actual_total, u.username
                FROM team_projections tp
                JOIN users u ON tp.user_id = u.id
                ORDER BY tp.snapshot_time, u.username"""
@@ -60,6 +60,7 @@ def projections_history():
             "user_id": r["user_id"],
             "name": format_display_name(r["username"]),
             "projected_total": float(r["projected_total"]) if r["projected_total"] is not None else None,
+            "actual_total": float(r["actual_total"]) if r["actual_total"] is not None else None,
         })
 
     snapshots = [

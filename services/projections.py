@@ -180,11 +180,12 @@ def fetch_live_projections(conn):
             if golfer:
                 cur.execute(
                     """INSERT INTO golfer_projections
-                       (golfer_id, projected_to_par, mc_probability, win_probability, snapshot_time)
-                       VALUES (%s, %s, %s, %s, %s)""",
+                       (golfer_id, projected_to_par, actual_to_par, mc_probability, win_probability, snapshot_time)
+                       VALUES (%s, %s, %s, %s, %s, %s)""",
                     (
                         golfer["id"],
                         p.get("projected_to_par"),
+                        p.get("actual_to_par"),
                         p.get("mc_probability", 1.0 - p.get("make_cut", 0.5)),
                         p.get("win", p.get("win_probability", 0)),
                         now,
@@ -201,15 +202,14 @@ def fetch_live_projections(conn):
 
 
 def compute_team_projections(conn, snapshot_time=None):
-    """Compute projected totals for each user using best-4-of-6 scoring.
+    """Compute projected and actual totals for each user using best-4-of-6 scoring.
 
     For golfers with mc_probability > 0.5 and no actual MC status yet,
     applies MC_PENALTY_SCORE instead of their projected_to_par.
 
-    Returns dict of {user_id: projected_total}.
+    Returns dict of {user_id: {"projected_total": x, "actual_total": y}}.
     """
     if snapshot_time is None:
-        # Use the latest snapshot
         with conn.cursor() as cur:
             cur.execute("SELECT MAX(snapshot_time) FROM golfer_projections")
             row = cur.fetchone()
@@ -232,7 +232,7 @@ def compute_team_projections(conn, snapshot_time=None):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """SELECT DISTINCT ON (golfer_id)
-                      golfer_id, projected_to_par, mc_probability
+                      golfer_id, projected_to_par, actual_to_par, mc_probability
                FROM golfer_projections
                WHERE snapshot_time <= %s
                ORDER BY golfer_id, snapshot_time DESC""",
@@ -256,37 +256,58 @@ def compute_team_projections(conn, snapshot_time=None):
 
     with conn.cursor() as cur:
         for user_id, picks in user_picks.items():
-            scores = []
+            proj_scores = []
+            actual_scores = []
+
             for pick in picks:
                 gid = pick["golfer_id"]
                 proj = proj_map.get(gid)
                 if proj is None:
-                    # No projection data — skip or use penalty
-                    scores.append(MC_PENALTY_SCORE)
+                    proj_scores.append(MC_PENALTY_SCORE)
                     continue
+
                 to_par = proj["projected_to_par"]
+                actual = proj["actual_to_par"]
                 mc_prob = proj["mc_probability"] or 0
+                is_mc = gid in actual_mc
 
-                if gid in actual_mc:
-                    # Already missed the cut — use penalty
-                    scores.append(MC_PENALTY_SCORE)
+                # Projected score
+                if is_mc:
+                    proj_scores.append(MC_PENALTY_SCORE)
                 elif mc_prob > 0.5 and to_par is None:
-                    # Likely to MC and no projected score — penalty
-                    scores.append(MC_PENALTY_SCORE)
+                    proj_scores.append(MC_PENALTY_SCORE)
                 elif to_par is not None:
-                    scores.append(float(to_par))
+                    proj_scores.append(float(to_par))
                 else:
-                    scores.append(MC_PENALTY_SCORE)
+                    proj_scores.append(MC_PENALTY_SCORE)
 
-            # Best 4 of 6
-            scores.sort()
-            total = sum(scores[:4]) if len(scores) >= 4 else sum(scores)
-            results[user_id] = total
+                # Actual score
+                if is_mc:
+                    actual_scores.append(MC_PENALTY_SCORE)
+                elif actual is not None:
+                    actual_scores.append(float(actual))
+                # else: skip — golfer hasn't started yet
+
+            # Best 4 of 6 for projected
+            proj_scores.sort()
+            projected_total = sum(proj_scores[:4]) if len(proj_scores) >= 4 else sum(proj_scores)
+
+            # Best 4 of 6 for actual (null if fewer than 4 have scores)
+            actual_total = None
+            if len(actual_scores) >= 4:
+                actual_scores.sort()
+                actual_total = sum(actual_scores[:4])
+
+            results[user_id] = {
+                "projected_total": projected_total,
+                "actual_total": actual_total,
+            }
 
             cur.execute(
-                """INSERT INTO team_projections (user_id, projected_total, snapshot_time)
-                   VALUES (%s, %s, %s)""",
-                (user_id, total, now),
+                """INSERT INTO team_projections
+                   (user_id, projected_total, actual_total, snapshot_time)
+                   VALUES (%s, %s, %s, %s)""",
+                (user_id, projected_total, actual_total, now),
             )
 
     logger.info("Computed team projections for %d users", len(results))

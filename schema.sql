@@ -61,10 +61,12 @@ CREATE TABLE IF NOT EXISTS golfer_projections (
     id SERIAL PRIMARY KEY,
     golfer_id INTEGER REFERENCES golfers(id),
     projected_to_par NUMERIC,
+    actual_to_par NUMERIC,
     mc_probability NUMERIC,
     win_probability NUMERIC,
     snapshot_time TIMESTAMP DEFAULT NOW()
 );
+ALTER TABLE golfer_projections ADD COLUMN IF NOT EXISTS actual_to_par NUMERIC;
 CREATE INDEX IF NOT EXISTS idx_golfer_proj_time ON golfer_projections(snapshot_time);
 CREATE INDEX IF NOT EXISTS idx_golfer_proj_golfer ON golfer_projections(golfer_id);
 
@@ -72,7 +74,9 @@ CREATE TABLE IF NOT EXISTS team_projections (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
     projected_total NUMERIC,
+    actual_total NUMERIC,
     snapshot_time TIMESTAMP DEFAULT NOW()
 );
+ALTER TABLE team_projections ADD COLUMN IF NOT EXISTS actual_total NUMERIC;
 CREATE INDEX IF NOT EXISTS idx_team_proj_time ON team_projections(snapshot_time);
 CREATE INDEX IF NOT EXISTS idx_team_proj_user ON team_projections(user_id);
