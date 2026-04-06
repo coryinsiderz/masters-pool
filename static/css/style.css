@@ -698,6 +698,7 @@ input:-webkit-autofill:focus {
     left: 0;
     right: auto;
     min-width: 220px;
+    max-height: 280px;
     border-top: none;
 }
 
@@ -1525,6 +1526,51 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
         min-width: 24px;
     }
 }
+
+/* ── Projections chart ── */
+
+.proj-chart-wrap {
+    position: relative;
+    height: 60vh;
+    margin-top: 0.75rem;
+}
+
+.proj-chart-wrap canvas {
+    background: transparent;
+}
+
+.chosen-option {
+    padding: 0;
+}
+
+.chosen-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.85rem;
+    color: var(--augusta-cream);
+}
+
+.chosen-label:hover {
+    background: rgba(0, 61, 42, 0.92);
+}
+
+.chosen-cb {
+    accent-color: var(--augusta-gold);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .proj-chart-wrap {
+        height: 50vh;
+    }
+}
+
 
 @media (orientation: landscape) and (max-height: 500px) {
     .data-table {

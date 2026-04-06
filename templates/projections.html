@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Projections{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>#model</h1>
+
+    <div class="toggle-row">
+        <button class="filter-btn active" id="tab-justme">Just Me</button>
+        <button class="filter-btn" id="tab-everyone">Everyone</button>
+        <div class="custom-dropdown team-viewer-dropdown" id="chosen-dropdown">
+            <div class="custom-dropdown-trigger filter-btn" id="chosen-trigger">
+                <span class="dd-text">Chosen Ones</span>
+            </div>
+            <div class="custom-dropdown-options" id="chosen-options">
+                {% for e in entrants %}
+                <div class="custom-dropdown-option chosen-option">
+                    <label class="chosen-label">
+                        <input type="checkbox" class="chosen-cb" value="{{ e.user_id }}">
+                        <span>{{ e.name }}</span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="proj-chart-wrap" id="chart-wrap">
+        <canvas id="projections-chart"></canvas>
+    </div>
+
+    <p class="empty-state" id="proj-empty" style="display:none">No projection data yet. Check back once the tournament begins.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+var CURRENT_USER_ID = {{ current_user.id }};
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var tabEveryone = document.getElementById("tab-everyone");
+    var tabJustMe = document.getElementById("tab-justme");
+    var chosenDropdown = document.getElementById("chosen-dropdown");
+    var chosenTrigger = document.getElementById("chosen-trigger");
+    var chosenOptions = document.getElementById("chosen-options");
+    var ddText = chosenTrigger.querySelector(".dd-text");
+    var chartWrap = document.getElementById("chart-wrap");
+    var emptyState = document.getElementById("proj-empty");
+
+    var chart = null;
+    var allData = null;
+    var activeTab = "justme";
+    var chosenUserIds = {};
+
+    // --- Tab switching ---
+    function setTab(tab) {
+        activeTab = tab;
+        tabJustMe.classList.toggle("active", tab === "justme");
+        tabEveryone.classList.toggle("active", tab === "everyone");
+        chosenTrigger.classList.toggle("active", tab === "chosen");
+        if (tab !== "chosen") {
+            chosenDropdown.classList.remove("open");
+        }
+        updateChart();
+    }
+
+    tabJustMe.addEventListener("click", function () { setTab("justme"); });
+    tabEveryone.addEventListener("click", function () { setTab("everyone"); });
+
+    // --- Chosen Ones dropdown-as-tab (matches Their Team pattern) ---
+    // app.js handles the dropdown open/close toggle via its global
+    // .custom-dropdown handler. We only manage tab state here.
+    chosenTrigger.addEventListener("click", function () {
+        if (activeTab !== "chosen") {
+            setTab("chosen");
+        }
+    });
+
+    // --- Bind chosen-ones checkboxes (server-rendered) ---
+    chosenOptions.querySelectorAll(".chosen-cb").forEach(function (cb) {
+        cb.addEventListener("change", function () {
+            var uid = parseInt(cb.value);
+            if (cb.checked) {
+                chosenUserIds[uid] = true;
+            } else {
+                delete chosenUserIds[uid];
+            }
+            updateChosenCount();
+            updateChart();
+        });
+    });
+
+    // --- Fetch data ---
+    fetch("/api/projections/history")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            allData = data;
+            if (!data.snapshots || data.snapshots.length === 0) {
+                chartWrap.style.display = "none";
+                emptyState.style.display = "";
+                return;
+            }
+            buildChart(data);
+        })
+        .catch(function () {
+            chartWrap.style.display = "none";
+            emptyState.style.display = "";
+        });
+
+    function updateChosenCount() {
+        var count = Object.keys(chosenUserIds).length;
+        if (count === 0) {
+            ddText.textContent = "Chosen Ones";
+        } else {
+            ddText.textContent = "Chosen Ones (" + count + ")";
+        }
+    }
+
+    // --- Chart ---
+    function buildChart(data) {
+        var snapshots = data.snapshots;
+        var labels = snapshots.map(function (s) { return formatTime(s.snapshot_time); });
+
+        // Collect all user IDs across snapshots
+        var userMap = {};
+        snapshots.forEach(function (snap) {
+            snap.teams.forEach(function (t) {
+                if (!userMap[t.user_id]) {
+                    userMap[t.user_id] = { name: t.name, data: [] };
+                }
+            });
+        });
+
+        // Fill data arrays (null for missing snapshots)
+        var userIds = Object.keys(userMap);
+        snapshots.forEach(function (snap, idx) {
+            var teamMap = {};
+            snap.teams.forEach(function (t) { teamMap[t.user_id] = t.projected_total; });
+            userIds.forEach(function (uid) {
+                var val = teamMap[uid] !== undefined ? teamMap[uid] : null;
+                userMap[uid].data.push(val);
+            });
+        });
+
+        var datasets = [];
+        userIds.forEach(function (uid) {
+            var u = userMap[uid];
+            var isMe = parseInt(uid) === data.current_user_id;
+            datasets.push({
+                label: u.name,
+                data: u.data,
+                userId: parseInt(uid),
+                borderColor: isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)",
+                borderWidth: isMe ? 3 : 1,
+                pointRadius: isMe ? 4 : 0,
+                pointHoverRadius: isMe ? 6 : 3,
+                pointBackgroundColor: isMe ? "#C8A951" : "rgba(255, 248, 231, 0.25)",
+                pointBorderColor: isMe ? "#C8A951" : "transparent",
+                fill: false,
+                tension: 0.3,
+                order: isMe ? 0 : 1,
+                hidden: !isMe,
+            });
+        });
+
+        var ctx = document.getElementById("projections-chart").getContext("2d");
+        chart = new Chart(ctx, {
+            type: "line",
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: "nearest",
+                        intersect: true,
+                        callbacks: {
+                            title: function (items) {
+                                return items[0].label;
+                            },
+                            label: function (ctx) {
+                                var val = ctx.parsed.y;
+                                var ds = ctx.dataset;
+                                var name = ds.label;
+                                var formatted = val === 0 ? "E" : (val > 0 ? "+" + val : String(val));
+                                // Compute rank at this snapshot
+                                var snapIdx = ctx.dataIndex;
+                                var allVals = [];
+                                chart.data.datasets.forEach(function (d) {
+                                    var v = d.data[snapIdx];
+                                    if (v !== null && v !== undefined) allVals.push(v);
+                                });
+                                allVals.sort(function (a, b) { return a - b; });
+                                var rank = allVals.indexOf(val) + 1;
+                                return name + ": " + formatted + " (" + ordinal(rank) + ")";
+                            }
+                        },
+                        backgroundColor: "rgba(0, 30, 20, 0.92)",
+                        titleColor: "#C8A951",
+                        bodyColor: "#FFF8E7",
+                        borderColor: "rgba(200, 169, 81, 0.4)",
+                        borderWidth: 1,
+                        titleFont: { family: "'Libre Baskerville', Georgia, serif", size: 12 },
+                        bodyFont: { family: "'Libre Baskerville', Georgia, serif", size: 12 },
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: "#FFF8E7",
+                            font: { family: "'Libre Baskerville', Georgia, serif", size: 11 },
+                            maxRotation: 45,
+                        },
+                        grid: { color: "rgba(200, 169, 81, 0.15)" },
+                    },
+                    y: {
+                        reverse: true,
+                        ticks: {
+                            color: "#FFF8E7",
+                            font: { family: "'Libre Baskerville', Georgia, serif", size: 11 },
+                            callback: function (val) {
+                                if (val === 0) return "E";
+                                return val > 0 ? "+" + val : String(val);
+                            }
+                        },
+                        grid: { color: "rgba(200, 169, 81, 0.15)" },
+                        title: {
+                            display: true,
+                            text: "Projected To Par",
+                            color: "#FFF8E7",
+                            font: { family: "'Cormorant Garamond', Georgia, serif", size: 14, weight: 600 },
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateChart() {
+        if (!chart) return;
+        chart.data.datasets.forEach(function (ds) {
+            var isMe = ds.userId === CURRENT_USER_ID;
+            if (activeTab === "justme") {
+                ds.hidden = !isMe;
+                if (isMe) {
+                    ds.borderColor = "#C8A951";
+                    ds.borderWidth = 3;
+                    ds.pointRadius = 4;
+                    ds.pointBackgroundColor = "#C8A951";
+                    ds.pointBorderColor = "#C8A951";
+                }
+            } else if (activeTab === "chosen") {
+                var isChosen = !!chosenUserIds[ds.userId];
+                ds.hidden = false;
+                if (isMe) {
+                    ds.borderColor = "#C8A951";
+                    ds.borderWidth = 3;
+                    ds.pointRadius = 4;
+                    ds.pointBackgroundColor = "#C8A951";
+                    ds.pointBorderColor = "#C8A951";
+                } else if (isChosen) {
+                    ds.borderColor = "rgba(255, 248, 231, 0.7)";
+                    ds.borderWidth = 2;
+                    ds.pointRadius = 2;
+                    ds.pointBackgroundColor = "rgba(255, 248, 231, 0.7)";
+                    ds.pointBorderColor = "transparent";
+                } else {
+                    ds.borderColor = "rgba(255, 248, 231, 0.15)";
+                    ds.borderWidth = 1;
+                    ds.pointRadius = 0;
+                    ds.pointBackgroundColor = "transparent";
+                    ds.pointBorderColor = "transparent";
+                }
+            } else {
+                // everyone
+                ds.hidden = false;
+                if (isMe) {
+                    ds.borderColor = "#C8A951";
+                    ds.borderWidth = 3;
+                    ds.pointRadius = 4;
+                    ds.pointBackgroundColor = "#C8A951";
+                    ds.pointBorderColor = "#C8A951";
+                } else {
+                    ds.borderColor = "rgba(255, 248, 231, 0.25)";
+                    ds.borderWidth = 1;
+                    ds.pointRadius = 0;
+                    ds.pointBackgroundColor = "transparent";
+                    ds.pointBorderColor = "transparent";
+                }
+            }
+        });
+        chart.update();
+    }
+
+    function formatTime(isoStr) {
+        if (!isoStr) return "";
+        var d = new Date(isoStr);
+        var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        var h = d.getHours();
+        var ampm = h >= 12 ? "pm" : "am";
+        h = h % 12 || 12;
+        return days[d.getDay()] + " " + h + ampm;
+    }
+
+    function ordinal(n) {
+        if (n % 100 >= 11 && n % 100 <= 13) return n + "th";
+        switch (n % 10) {
+            case 1: return n + "st";
+            case 2: return n + "nd";
+            case 3: return n + "rd";
+            default: return n + "th";
+        }
+    }
+});
+</script>
+{% endblock %}

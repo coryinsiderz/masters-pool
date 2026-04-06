@@ -296,6 +296,30 @@ def toggle_paid(user_id):
     return jsonify({"paid": row[0]})
 
 
+@admin_bp.route("/api/admin/fetch-projections", methods=["POST"])
+def api_fetch_projections():
+    if not is_admin():
+        return jsonify({"error": "Forbidden"}), 403
+    from app import get_db_connection
+    from services.projections import fetch_projections
+    conn = get_db_connection()
+    result = fetch_projections(conn)
+    conn.close()
+    return jsonify(result)
+
+
+@admin_bp.route("/api/admin/match-dg-names", methods=["POST"])
+def api_match_dg_names():
+    if not is_admin():
+        return jsonify({"error": "Forbidden"}), 403
+    from app import get_db_connection
+    from services.projections import match_dg_names
+    conn = get_db_connection()
+    result = match_dg_names(conn)
+    conn.close()
+    return jsonify(result)
+
+
 @admin_bp.route("/admin/reset-for-testing", methods=["POST"])
 def reset_for_testing():
     """Temporary route for Valero testing. Delete before go-live."""
