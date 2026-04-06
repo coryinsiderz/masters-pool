@@ -26,7 +26,7 @@
         {% for tier_num in range(1, 7) %}
         <div class="pick-tier">
             <label>{{ tiers[tier_num].name }}</label>
-            <div class="custom-dropdown">
+            <div class="custom-dropdown{% if tier_num >= 4 %} dropup{% endif %}">
                 <input type="hidden" name="tier_{{ tier_num }}" value="{{ current_picks[tier_num].golfer_id if current_picks.get(tier_num) else '' }}">
                 <div class="custom-dropdown-trigger">
                     <span class="dd-text{% if not current_picks.get(tier_num) %} dd-placeholder{% endif %}">
