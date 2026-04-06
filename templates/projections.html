@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var TOURNEY_START = new Date("2026-04-09T07:30:00-04:00").getTime();
     var TOURNEY_END = new Date("2026-04-12T19:00:00-04:00").getTime();
     var chosenUserIds = {};
-    var legendSort = "score"; // "score" or "name"
+    var legendSort = "proj"; // "proj", "cur", or "name"
     var legendSortAsc = true;  // true = best first for score, A-Z for name
 
     // --- Tab switching ---
@@ -133,7 +133,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var liveLinePlugin = {
         id: "liveLine",
         afterDraw: function (chart) {
-            var now = Date.now();
+            // TEMPORARY: fixed timestamp for testing. Revert to Date.now() before go-live.
+            var now = new Date("2026-04-11T06:00:00-04:00").getTime();
             if (now <= TOURNEY_START || now >= TOURNEY_END) return;
 
             var xScale = chart.scales.x;
@@ -427,14 +428,18 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        // Sort function — sort by projected total
         function sortEntries(arr) {
             arr.sort(function (a, b) {
                 if (legendSort === "name") {
                     var cmp = a.name.localeCompare(b.name);
                     return legendSortAsc ? cmp : -cmp;
                 }
-                var va = a.lastProj, vb = b.lastProj;
+                var va, vb;
+                if (legendSort === "cur") {
+                    va = a.lastActual; vb = b.lastActual;
+                } else {
+                    va = a.lastProj; vb = b.lastProj;
+                }
                 if (va === null && vb === null) return 0;
                 if (va === null) return 1;
                 if (vb === null) return -1;
@@ -444,10 +449,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var html = "";
 
-        // Header row
+        // Header row — three columns
         html += '<div class="pl-header">';
         html += '<span class="pl-hdr-name' + (legendSort === "name" ? ' pl-hdr-active' : '') + '" id="pl-sort-name">Name</span>';
-        html += '<span class="pl-hdr-score' + (legendSort === "score" ? ' pl-hdr-active' : '') + '" id="pl-sort-score">Proj</span>';
+        html += '<span class="pl-hdr-col' + (legendSort === "cur" ? ' pl-hdr-active' : '') + '" id="pl-sort-cur">Cur</span>';
+        html += '<span class="pl-hdr-col' + (legendSort === "proj" ? ' pl-hdr-active' : '') + '" id="pl-sort-proj">Proj</span>';
         html += '</div>';
 
         if (activeTab === "chosen") {
@@ -472,34 +478,32 @@ document.addEventListener("DOMContentLoaded", function () {
         legend.innerHTML = html;
 
         // Bind sort header clicks
-        var sortName = document.getElementById("pl-sort-name");
-        var sortScore = document.getElementById("pl-sort-score");
-        if (sortName) sortName.addEventListener("click", function () {
+        document.getElementById("pl-sort-name").addEventListener("click", function () {
             if (legendSort === "name") { legendSortAsc = !legendSortAsc; }
             else { legendSort = "name"; legendSortAsc = true; }
             updateLegend();
         });
-        if (sortScore) sortScore.addEventListener("click", function () {
-            if (legendSort === "score") { legendSortAsc = !legendSortAsc; }
-            else { legendSort = "score"; legendSortAsc = true; }
+        document.getElementById("pl-sort-cur").addEventListener("click", function () {
+            if (legendSort === "cur") { legendSortAsc = !legendSortAsc; }
+            else { legendSort = "cur"; legendSortAsc = true; }
+            updateLegend();
+        });
+        document.getElementById("pl-sort-proj").addEventListener("click", function () {
+            if (legendSort === "proj") { legendSortAsc = !legendSortAsc; }
+            else { legendSort = "proj"; legendSortAsc = true; }
             updateLegend();
         });
     }
 
     function renderEntry(e) {
         var nameClass = e.isMe ? "pl-name pl-me" : "pl-name";
-        var scoreText;
-        if (e.lastActual !== null) {
-            scoreText = formatScore(e.lastActual) + ' \u2192 ' + formatScore(e.lastProj);
-        } else if (e.lastProj !== null) {
-            scoreText = 'proj ' + formatScore(e.lastProj);
-        } else {
-            scoreText = '--';
-        }
+        var curText = e.lastActual !== null ? formatScore(e.lastActual) : "-";
+        var projText = e.lastProj !== null ? formatScore(e.lastProj) : "--";
         var html = '<div class="pl-entry">';
         html += '<span class="pl-line" style="background:' + e.color + '"></span>';
         html += '<span class="' + nameClass + '">' + esc(e.name) + '</span>';
-        html += '<span class="pl-score">' + scoreText + '</span>';
+        html += '<span class="pl-col">' + curText + '</span>';
+        html += '<span class="pl-col pl-col-proj">' + projText + '</span>';
         html += '</div>';
         return html;
     }
@@ -507,8 +511,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function formatScore(val) {
         if (val === null) return "--";
         if (val === 0) return "E";
-        if (val > 0) return "+" + val.toFixed(1);
-        return val.toFixed(1);
+        // Drop .0 decimal, keep others
+        var s;
+        if (val % 1 === 0) {
+            s = String(Math.round(val));
+        } else {
+            s = val.toFixed(1);
+        }
+        if (val > 0) return "+" + s;
+        return s;
     }
 
     function esc(str) {

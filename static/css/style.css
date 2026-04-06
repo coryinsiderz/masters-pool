@@ -1589,12 +1589,17 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     font-weight: 700;
 }
 
-.pl-score {
+.pl-col {
     flex-shrink: 0;
     text-align: right;
+    color: var(--augusta-cream);
+    min-width: 32px;
+    font-size: 0.65rem;
+}
+
+.pl-col-proj {
     color: var(--augusta-gold);
     font-weight: 700;
-    min-width: 36px;
 }
 
 .pl-header {
@@ -1616,16 +1621,16 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     padding-left: 17px;
 }
 
-.pl-hdr-score {
+.pl-hdr-col {
     flex-shrink: 0;
     text-align: right;
-    min-width: 36px;
+    min-width: 32px;
     cursor: pointer;
     user-select: none;
 }
 
 .pl-hdr-name:hover,
-.pl-hdr-score:hover {
+.pl-hdr-col:hover {
     color: var(--augusta-gold);
 }
 
