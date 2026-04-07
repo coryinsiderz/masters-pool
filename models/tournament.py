@@ -39,7 +39,7 @@ def upsert_golfer_score(conn, golfer_id, **fields):
 def get_all_scores(conn):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            """SELECT gs.*, g.name, g.tier, g.espn_id
+            """SELECT gs.*, g.name, g.tier, g.espn_id, g.masters_id
                FROM golfer_scores gs
                JOIN golfers g ON gs.golfer_id = g.id
                ORDER BY gs.position"""
@@ -52,7 +52,7 @@ def get_scores_for_golfers(conn, golfer_ids):
         return []
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            """SELECT gs.*, g.name, g.tier
+            """SELECT gs.*, g.name, g.tier, g.masters_id
                FROM golfer_scores gs
                JOIN golfers g ON gs.golfer_id = g.id
                WHERE gs.golfer_id = ANY(%s)""",

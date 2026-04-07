@@ -17,7 +17,7 @@ def set_pick(conn, user_id, tier, golfer_id):
 def get_picks_for_user(conn, user_id):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            """SELECT p.*, g.name AS golfer_name, g.tier AS golfer_tier
+            """SELECT p.*, g.name AS golfer_name, g.tier AS golfer_tier, g.masters_id
                FROM picks p
                JOIN golfers g ON p.golfer_id = g.id
                WHERE p.user_id = %s

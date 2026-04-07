@@ -56,6 +56,7 @@ def _build_full_leaderboard(conn):
             own_pct = round(own_count / total_users * 100) if total_users else 0
             tiers[tier] = {
                 "name": g.get("name", ""),
+                "masters_id": g.get("masters_id"),
                 "tier": tier,
                 "to_par": g.get("to_par", ""),
                 "total_strokes": g.get("effective_strokes") or g.get("total_strokes"),

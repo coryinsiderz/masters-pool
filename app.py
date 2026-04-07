@@ -194,6 +194,7 @@ def format_ordinal(value):
 app.jinja_env.filters["ordinal"] = format_ordinal
 
 
+
 @app.route("/health")
 def health():
     return "OK", 200

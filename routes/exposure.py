@@ -40,13 +40,13 @@ def exposure():
         total_users = cur.fetchone()["cnt"]
 
         cur.execute(
-            """SELECT g.id AS golfer_id, g.name, g.tier,
+            """SELECT g.id AS golfer_id, g.name, g.tier, g.masters_id,
                       gs.to_par, gs.position, gs.thru, gs.status,
                       COUNT(p.id) AS ownership_count
                FROM golfers g
                JOIN picks p ON p.golfer_id = g.id
                LEFT JOIN golfer_scores gs ON gs.golfer_id = g.id
-               GROUP BY g.id, g.name, g.tier, gs.to_par, gs.position, gs.thru, gs.status
+               GROUP BY g.id, g.name, g.tier, g.masters_id, gs.to_par, gs.position, gs.thru, gs.status
                ORDER BY COUNT(p.id) DESC, g.name"""
         )
         golfers = cur.fetchall()

@@ -71,6 +71,7 @@ def team():
             "tier": pick["tier"],
             "tier_name": TIER_NAMES.get(pick["tier"], str(pick["tier"])),
             "name": pick["golfer_name"],
+            "masters_id": pick.get("masters_id"),
             "ownership_pct": own_pct,
             "ownership_count": own_count,
             "owners": owner_names.get(gid, []),
@@ -242,6 +243,7 @@ def team_detail(user_id):
         cards.append({
             "tier_name": TIER_NAMES.get(pick["tier"], str(pick["tier"])),
             "name": pick["golfer_name"],
+            "masters_id": pick.get("masters_id"),
             "to_par": score.get("to_par", "") or "--",
             "total_strokes": score.get("total_strokes"),
             "position": pos_display,
@@ -267,6 +269,7 @@ def team_detail(user_id):
         "cards": [{
             "tier_name": c["tier_name"],
             "name": c["name"],
+            "masters_id": c.get("masters_id"),
             "to_par": c["to_par"],
             "position": c["position"],
             "thru": c["thru"],

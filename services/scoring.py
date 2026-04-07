@@ -108,7 +108,7 @@ def build_leaderboard(conn):
     for user in users:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                """SELECT p.tier, g.id AS golfer_id, g.name,
+                """SELECT p.tier, g.id AS golfer_id, g.name, g.masters_id,
                           gs.total_strokes, gs.status, gs.position,
                           gs.round_1, gs.round_2, gs.round_3, gs.round_4,
                           gs.to_par, gs.thru
