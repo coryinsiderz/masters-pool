@@ -164,17 +164,11 @@ def inject_globals():
 
 
 def format_display_name(username):
-    """Format username for display: 'cory' -> 'Cory', 'cory baltz' -> 'Cory B.'"""
+    """Format username for display: 'cory baltz' -> 'Cory Baltz', 'CJ mcCollum' -> 'CJ McCollum'"""
     if not username:
         return ""
     parts = username.strip().split()
-    if len(parts) == 1:
-        return parts[0].capitalize()
-    if len(parts) == 2:
-        if len(parts[1]) == 2 and parts[1].endswith("."):
-            return f"{parts[0].capitalize()} {parts[1].upper()}"
-        return f"{parts[0].capitalize()} {parts[1][0].upper()}."
-    return parts[0].capitalize() + " " + parts[1][0].upper() + "."
+    return " ".join(w[0].upper() + w[1:] if w else w for w in parts)
 
 
 app.jinja_env.filters["display_name"] = format_display_name

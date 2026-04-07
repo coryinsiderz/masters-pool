@@ -27,9 +27,9 @@ def login():
 def register():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
-        # Capitalize first character, leave rest as-is
+        # Capitalize first letter of each word, preserve the rest
         if username:
-            username = username[0].upper() + username[1:] if len(username) > 1 else username.upper()
+            username = " ".join(w[0].upper() + w[1:] if w else w for w in username.split())
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
         recovery_contact = request.form.get("recovery_contact", "").strip() or None
