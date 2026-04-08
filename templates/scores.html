@@ -8,7 +8,7 @@
 
     {% if scores %}
     <div class="toggle-row">
-        <a href="{{ url_for('scores.scores') }}" class="tab-btn {% if view != 'board' %}active{% endif %}">Leaderboard</a>
+        <a href="{{ url_for('scores.scores') }}" class="tab-btn {% if view != 'board' %}active{% endif %}">Leader Board</a>
         <a href="{{ url_for('scores.scores', view='board') }}" class="tab-btn {% if view == 'board' %}active{% endif %}">Traditional</a>
     </div>
 
