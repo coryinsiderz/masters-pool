@@ -15,7 +15,7 @@
     {% endif %}
 
     {% if not picks_locked %}
-    <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:0.5rem;display:inline-block">Edit Picks</a>
+    <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:0.5rem;display:inline-block">Edit Picks until 7:40 AM Thursday</a>
     {% endif %}
 
     {% if picks_locked %}
@@ -62,7 +62,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <p class="empty-state">You haven't made your picks yet. <a href="{{ url_for('picks.picks') }}" style="color:var(--augusta-gold)">Make your picks</a></p>
+    <p class="empty-state">You haven't made your picks yet. <a href="{{ url_for('picks.picks') }}" style="color:var(--augusta-gold)">Make your picks by 7:40 AM Thursday</a></p>
     {% endif %}
 </div>
 {% if picks_locked %}
