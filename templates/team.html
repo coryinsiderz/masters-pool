@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-container">
     <div class="squad-header">
-        <h1>Squad</h1>
+        <h1>Squad{% if team_to_par and team_to_par != '--' %} ({{ team_to_par }}){% endif %}</h1>
     </div>
 
     {% if current_user and current_user.paid %}
