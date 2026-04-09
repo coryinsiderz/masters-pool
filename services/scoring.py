@@ -63,8 +63,22 @@ def calculate_team_score(golfer_scores, penalty_score):
             "all_golfers": scored,
         }
 
-    # Sort by effective strokes (None sorts to end)
-    scored.sort(key=lambda s: (s["effective_strokes"] is None, s["effective_strokes"] or 0))
+    # Parse to_par for sorting: "E"->0, "-1"->-1, "+2"->2, empty->0, MC/WD/DQ->99
+    def _to_par_num(s):
+        if s.get("status") in ("MC", "WD", "DQ"):
+            return 99
+        tp = s.get("to_par", "")
+        if not tp or tp == "--":
+            return 0
+        if tp == "E":
+            return 0
+        try:
+            return int(tp)
+        except (ValueError, TypeError):
+            return 0
+
+    # Sort by to_par value ascending (lowest to_par = best)
+    scored.sort(key=lambda s: _to_par_num(s))
 
     # Best 4 count, worst 2 are bench
     for i, s in enumerate(scored):
