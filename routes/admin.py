@@ -358,3 +358,56 @@ def api_projections_polling_status():
     return jsonify({"running": running, "interval": interval})
 
 
+@admin_bp.route("/admin/backfill-espn-ids")
+def backfill_espn_ids():
+    if not is_admin():
+        return "Forbidden", 403
+    import unicodedata
+
+    from app import get_db_connection
+    from services.espn import fetch_leaderboard, parse_leaderboard
+
+    parsed = parse_leaderboard(fetch_leaderboard())
+    if not parsed or not parsed["golfers"]:
+        return jsonify({"error": "Could not fetch ESPN field"}), 500
+
+    conn = get_db_connection()
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, name FROM golfers")
+        db_golfers = cur.fetchall()
+
+    def normalize(name):
+        # Strip diacritics and lowercase for fuzzy matching
+        nfkd = unicodedata.normalize("NFKD", name)
+        return "".join(c for c in nfkd if not unicodedata.combining(c)).lower().strip()
+
+    # Build lookup: normalized name -> (golfer_id, original_name)
+    db_lookup = {}
+    for gid, gname in db_golfers:
+        db_lookup[normalize(gname)] = (gid, gname)
+
+    matched = []
+    unmatched_espn = []
+    for espn_golfer in parsed["golfers"]:
+        espn_name = espn_golfer["name"]
+        espn_id = espn_golfer["espn_id"]
+        key = normalize(espn_name)
+        if key in db_lookup:
+            gid, db_name = db_lookup[key]
+            matched.append({"db_id": gid, "db_name": db_name, "espn_name": espn_name, "espn_id": espn_id})
+        else:
+            unmatched_espn.append({"espn_name": espn_name, "espn_id": espn_id})
+
+    # Apply updates
+    with conn.cursor() as cur:
+        for m in matched:
+            cur.execute("UPDATE golfers SET espn_id = %s WHERE id = %s", (m["espn_id"], m["db_id"]))
+    conn.close()
+
+    return jsonify({
+        "matched": len(matched),
+        "unmatched": len(unmatched_espn),
+        "unmatched_names": [u["espn_name"] for u in unmatched_espn],
+    })
+
+

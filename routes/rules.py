@@ -22,10 +22,10 @@ def rules():
     finally:
         conn.close()
 
-    total_pot = total_entries * 10
-    raw_2nd = round((total_pot * 0.25) / 5) * 5
-    raw_3rd = round((total_pot * 0.15) / 5) * 5
-    payout_1st = total_pot - raw_2nd - raw_3rd
+    total_pot = 240
+    raw_2nd = 60
+    raw_3rd = 30
+    payout_1st = 150
 
     picks_locked = datetime.now(timezone(timedelta(hours=-4))) > datetime.fromisoformat(Config.PICKS_DEADLINE)
 
