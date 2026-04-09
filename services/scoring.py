@@ -63,19 +63,21 @@ def calculate_team_score(golfer_scores, penalty_score):
             "all_golfers": scored,
         }
 
-    # Parse to_par for sorting: "E"->0, "-1"->-1, "+2"->2, empty->0, MC/WD/DQ->99
+    # Parse to_par for sorting: "E"->0, "-1"->-1, "+2"->2, empty->0.5, MC/WD/DQ->99
+    # Golfers who haven't started (no thru) sort at 0.5: after real E but before +1
     def _to_par_num(s):
         if s.get("status") in ("MC", "WD", "DQ"):
             return 99
         tp = s.get("to_par", "")
+        thru = s.get("thru", "")
         if not tp or tp == "--":
-            return 0
+            return 0.5
         if tp == "E":
-            return 0
+            return 0 if thru else 0.5
         try:
             return int(tp)
         except (ValueError, TypeError):
-            return 0
+            return 0.5
 
     # Sort by to_par value ascending (lowest to_par = best)
     scored.sort(key=lambda s: _to_par_num(s))
