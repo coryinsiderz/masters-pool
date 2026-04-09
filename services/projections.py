@@ -166,7 +166,7 @@ def fetch_live_projections(conn):
         return {"matched": 0, "unmatched": 0, "error": str(e)}
 
     data = r.json()
-    players = data if isinstance(data, list) else data.get("data", [])
+    players = data if isinstance(data, list) else data.get("players", data.get("data", []))
 
     lookup = _build_golfer_lookup(conn)
     now = datetime.now(timezone.utc)
@@ -184,7 +184,7 @@ def fetch_live_projections(conn):
                        VALUES (%s, %s, %s, %s, %s, %s)""",
                     (
                         golfer["id"],
-                        p.get("projected_to_par"),
+                        p.get("projected_to_par", p.get("to_par")),
                         p.get("actual_to_par"),
                         p.get("mc_probability", 1.0 - p.get("make_cut", 0.5)),
                         p.get("win", p.get("win_probability", 0)),
