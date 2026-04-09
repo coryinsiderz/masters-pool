@@ -18,7 +18,7 @@ def rules():
     try:
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(DISTINCT user_id) FROM picks")
-            total_entries = cur.fetchone()[0]
+            total_entries = 24
     finally:
         conn.close()
 
