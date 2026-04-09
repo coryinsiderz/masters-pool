@@ -289,33 +289,30 @@ def compute_team_projections(conn, snapshot_time=None):
                 else:
                     proj_scores.append(MC_PENALTY_SCORE)
 
-                # Actual score from ESPN data
+                # Actual score from ESPN data (hasn't started = 0 / E par)
                 espn = espn_scores.get(gid)
                 if is_mc:
                     actual_scores.append(MC_PENALTY_SCORE)
                 elif espn:
                     espn_tp = espn.get("to_par", "")
                     espn_thru = espn.get("thru", "")
-                    if espn_tp == "E" and espn_thru:
-                        actual_scores.append(0.0)
-                    elif espn_tp and espn_tp not in ("", "--", "E"):
+                    if espn_tp and espn_tp not in ("", "--", "E"):
                         try:
                             actual_scores.append(float(int(espn_tp)))
                         except (ValueError, TypeError):
-                            pass
-                    elif espn_tp == "E" and not espn_thru:
-                        pass  # hasn't started
-                # else: no ESPN data, skip
+                            actual_scores.append(0.0)
+                    else:
+                        actual_scores.append(0.0)
+                else:
+                    actual_scores.append(0.0)
 
             # Best 4 of 6 for projected
             proj_scores.sort()
             projected_total = sum(proj_scores[:4]) if len(proj_scores) >= 4 else sum(proj_scores)
 
-            # Best 4 of 6 for actual (null if no golfers have scores)
-            actual_total = None
-            if actual_scores:
-                actual_scores.sort()
-                actual_total = sum(actual_scores[:min(4, len(actual_scores))])
+            # Best 4 of 6 for actual (0 if no golfers have scores)
+            actual_scores.sort()
+            actual_total = sum(actual_scores[:min(4, len(actual_scores))]) if actual_scores else 0.0
 
             results[user_id] = {
                 "projected_total": projected_total,
