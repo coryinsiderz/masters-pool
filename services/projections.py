@@ -311,11 +311,11 @@ def compute_team_projections(conn, snapshot_time=None):
             proj_scores.sort()
             projected_total = sum(proj_scores[:4]) if len(proj_scores) >= 4 else sum(proj_scores)
 
-            # Best 4 of 6 for actual (null if fewer than 4 have scores)
+            # Best 4 of 6 for actual (null if no golfers have scores)
             actual_total = None
-            if len(actual_scores) >= 4:
+            if actual_scores:
                 actual_scores.sort()
-                actual_total = sum(actual_scores[:4])
+                actual_total = sum(actual_scores[:min(4, len(actual_scores))])
 
             results[user_id] = {
                 "projected_total": projected_total,
