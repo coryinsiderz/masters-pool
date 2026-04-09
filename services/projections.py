@@ -240,6 +240,14 @@ def compute_team_projections(conn, snapshot_time=None):
         )
         proj_map = {r["golfer_id"]: r for r in cur.fetchall()}
 
+    # Get actual to_par from ESPN scoring data
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """SELECT golfer_id, to_par, status, thru
+               FROM golfer_scores"""
+        )
+        espn_scores = {r["golfer_id"]: r for r in cur.fetchall()}
+
     # Get actual MC statuses from golfer_scores
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("SELECT golfer_id, status FROM golfer_scores WHERE status = 'cut'")
@@ -281,12 +289,23 @@ def compute_team_projections(conn, snapshot_time=None):
                 else:
                     proj_scores.append(MC_PENALTY_SCORE)
 
-                # Actual score
+                # Actual score from ESPN data
+                espn = espn_scores.get(gid)
                 if is_mc:
                     actual_scores.append(MC_PENALTY_SCORE)
-                elif actual is not None:
-                    actual_scores.append(float(actual))
-                # else: skip — golfer hasn't started yet
+                elif espn:
+                    espn_tp = espn.get("to_par", "")
+                    espn_thru = espn.get("thru", "")
+                    if espn_tp == "E" and espn_thru:
+                        actual_scores.append(0.0)
+                    elif espn_tp and espn_tp not in ("", "--", "E"):
+                        try:
+                            actual_scores.append(float(int(espn_tp)))
+                        except (ValueError, TypeError):
+                            pass
+                    elif espn_tp == "E" and not espn_thru:
+                        pass  # hasn't started
+                # else: no ESPN data, skip
 
             # Best 4 of 6 for projected
             proj_scores.sort()
