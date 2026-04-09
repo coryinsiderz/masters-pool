@@ -36,6 +36,7 @@ def calculate_team_score(golfer_scores, penalty_score):
     if not golfer_scores:
         return {
             "team_total": None,
+            "team_to_par": None,
             "counting_golfers": [],
             "bench_golfers": [],
             "all_golfers": [],
@@ -58,6 +59,7 @@ def calculate_team_score(golfer_scores, penalty_score):
             s["counting"] = False
         return {
             "team_total": None,
+            "team_to_par": None,
             "counting_golfers": [],
             "bench_golfers": scored,
             "all_golfers": scored,
@@ -90,9 +92,11 @@ def calculate_team_score(golfer_scores, penalty_score):
     bench = [s for s in scored if not s["counting"]]
 
     team_total = sum(s["effective_strokes"] for s in counting) if counting else None
+    team_to_par = sum(_to_par_num(s) for s in counting) if counting else None
 
     return {
         "team_total": team_total,
+        "team_to_par": team_to_par,
         "counting_golfers": counting,
         "bench_golfers": bench,
         "all_golfers": scored,
@@ -143,13 +147,14 @@ def build_leaderboard(conn):
             "username": user["username"],
             "paid": user.get("paid", False),
             "team_total": result["team_total"],
+            "team_to_par": result["team_to_par"],
             "counting_golfers": result["counting_golfers"],
             "bench_golfers": result["bench_golfers"],
             "all_golfers": result["all_golfers"],
         })
 
     # Sort: team_total ascending, None to bottom
-    standings.sort(key=lambda s: (s["team_total"] is None, s["team_total"] or 0))
+    standings.sort(key=lambda s: (s["team_to_par"] is None, s["team_to_par"] or 0))
 
     # Apply tiebreaker and ranks
     _apply_ranks(standings)
@@ -162,10 +167,10 @@ def _apply_ranks(standings):
     if not standings:
         return
 
-    # Group by team_total to find ties
+    # Group by team_to_par to find ties
     i = 0
     while i < len(standings):
-        total = standings[i]["team_total"]
+        total = standings[i]["team_to_par"]
         if total is None:
             # No score yet, rank as "--"
             for j in range(i, len(standings)):
@@ -174,7 +179,7 @@ def _apply_ranks(standings):
 
         # Find all entries with same total
         j = i
-        while j < len(standings) and standings[j]["team_total"] == total:
+        while j < len(standings) and standings[j]["team_to_par"] == total:
             j += 1
 
         tie_count = j - i
