@@ -1742,19 +1742,20 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     position: sticky;
     left: 0;
     z-index: 1;
-    padding: 20px 10px !important;
+    padding: 2px 10px !important;
     background: rgba(0, 0, 0, 0.6);
     border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
     border-bottom: 1px solid rgba(200, 169, 81, 0.4) !important;
     font-family: 'Cormorant Garamond', serif;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    line-height: 1.1;
     font-weight: 600;
     color: var(--augusta-gold);
     letter-spacing: 0.5px;
 }
 
 .cutline-cell-fill {
-    padding: 20px 0 !important;
+    padding: 2px 0 !important;
     border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
     border-bottom: 1px solid rgba(200, 169, 81, 0.4) !important;
 }
