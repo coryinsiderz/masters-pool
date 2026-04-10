@@ -110,7 +110,7 @@
             {% for s in scores %}
             {% if show_cut_projections and cutline_probs and s.status == 'active' and s.to_par != prev_topar.val and s.to_par in cutline_scores %}
             {% for cp in cutline_probs %}{% if cp[0] == s.to_par %}
-            <tr class="cutline-row"><td class="cutline-cell-sticky">Projected Cut<span class="cutline-score">{{ cp[0] }}</span><span class="cutline-pct">{{ (cp[1] * 100) | round(0) | int }}%</span></td><td colspan="9" class="cutline-cell-fill"></td></tr>
+            <tr class="cutline-row"><td class="cutline-cell-sticky"><div style="line-height:1.3">Proj<br><span class="cutline-score" style="margin-left:0">{{ cp[0] }}</span> <span class="cutline-pct">{{ (cp[1] * 100) | round(0) | int }}%</span></div></td><td colspan="9" class="cutline-cell-fill"></td></tr>
             {% endif %}{% endfor %}
             {% endif %}
             {% set prev_topar.val = s.to_par %}

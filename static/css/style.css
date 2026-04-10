@@ -1742,7 +1742,6 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     position: sticky;
     left: 0;
     z-index: 1;
-    white-space: nowrap;
     padding: 20px 10px !important;
     background: rgba(0, 0, 0, 0.6);
     border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
