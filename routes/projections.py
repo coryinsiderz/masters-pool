@@ -9,6 +9,7 @@ def projections():
         return redirect(url_for("auth.login"))
 
     from app import format_display_name, get_db_connection
+    from config import Config
     import psycopg2.extras
 
     conn = get_db_connection()
@@ -19,6 +20,21 @@ def projections():
                ORDER BY u.username"""
         )
         rows = cur.fetchall()
+
+    # Cutline projection data
+    from models.tournament import get_tournament_state, get_all_scores
+    tournament = get_tournament_state(conn)
+    current_round = tournament.get("current_round", 0) if tournament else 0
+    cutline_probs = []
+    show_cut = Config.SHOW_CUT_PROJECTIONS and current_round <= 2
+    if show_cut:
+        from services.cutline import get_mc_map, compute_cutline_probs
+        mc_map = get_mc_map(conn)
+        all_scores = get_all_scores(conn)
+        for s in all_scores:
+            s["mc_probability"] = mc_map.get(s.get("golfer_id"))
+        cutline_probs = compute_cutline_probs(all_scores)
+
     conn.close()
 
     entrants = [
@@ -27,7 +43,12 @@ def projections():
         if r["id"] != g.current_user["id"]
     ]
 
-    return render_template("projections.html", entrants=entrants)
+    return render_template(
+        "projections.html",
+        entrants=entrants,
+        show_cut_projections=show_cut,
+        cutline_probs=cutline_probs,
+    )
 
 
 @projections_bp.route("/api/projections/history")

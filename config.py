@@ -14,3 +14,4 @@ class Config:
     ENABLE_POLLING = os.environ.get("ENABLE_POLLING", "1")
     ENABLE_PROJECTIONS_POLLING = os.environ.get("ENABLE_PROJECTIONS_POLLING", "0")
     PROJECTIONS_POLL_INTERVAL = int(os.environ.get("PROJECTIONS_POLL_INTERVAL", 300))  # 5 min default
+    SHOW_CUT_PROJECTIONS = True

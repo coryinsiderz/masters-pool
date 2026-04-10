@@ -6,6 +6,12 @@
 <div class="page-container">
     <h1>Score Card</h1>
 
+    {% if show_cut_projections and cutline_probs %}
+    <div class="cutline-bar">
+        Projected Cut{% for cp in cutline_probs %}{% if not loop.first %}<span class="cutline-dot">&middot;</span>{% endif %}<span class="cutline-score">{{ cp[0] }}</span><span class="cutline-pct">{{ (cp[1] * 100) | round(0) | int }}%</span>{% endfor %}
+    </div>
+    {% endif %}
+
     {% if standings %}
     <div class="leaderboard-scroll">
     <table class="data-table leaderboard-table sortable-table" id="leaderboard">
@@ -41,6 +47,7 @@
                         {% if g.status not in ('MC','WD','DQ') %}
                         <span class="mc-round">{% if g.thru and g.thru != 'F' %}{{ g.current_round_par or g.to_par or '--' }} Thru {{ g.thru }}{% elif g.thru == 'F' %}{{ g['round_' ~ current_round] or '--' }}{% else %}--{% endif %}</span>
                         {% endif %}
+                        {% if show_cut_projections and g.mc_probability is defined and g.mc_probability is not none %}<span class="mc-cut">{{ (g.mc_probability * 100) | round(0) | int }}%</span>{% endif %}
                         <span class="mc-own owned-trigger" data-owners="{{ g.owners | map('display_name') | join(', ') }}" data-golfer="{{ g.name }}" data-pct="{{ g.ownership_pct }}">{{ g.ownership_pct }}%</span>
                     </div>
                 </td>

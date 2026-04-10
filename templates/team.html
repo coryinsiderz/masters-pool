@@ -18,6 +18,12 @@
     <a href="{{ url_for('picks.picks') }}" class="btn btn-primary" style="margin-bottom:0.5rem;display:inline-block">Edit Picks until 7:40 AM Thursday</a>
     {% endif %}
 
+    {% if show_cut_projections and cutline_probs %}
+    <div class="cutline-bar">
+        Projected Cut{% for cp in cutline_probs %}{% if not loop.first %}<span class="cutline-dot">&middot;</span>{% endif %}<span class="cutline-score">{{ cp[0] }}</span><span class="cutline-pct">{{ (cp[1] * 100) | round(0) | int }}%</span>{% endfor %}
+    </div>
+    {% endif %}
+
     {% if picks_locked %}
     <div class="toggle-row">
         <button class="filter-btn active" id="my-team-tab">My Team</button>
@@ -37,7 +43,7 @@
         <div class="squad-card{% if card.counting %} counting{% endif %}">
             <div class="sc-tier">{{ card.tier_name }}</div>
             <div class="sc-main">
-                <div class="sc-name">{{ card.name }}{% if picks_locked %} <span class="sc-own owned-trigger" data-owners="{{ card.owners | map('display_name') | join(', ') }}" data-golfer="{{ card.name }}" data-pct="{{ card.ownership_pct }}">{{ card.ownership_pct }}%</span>{% endif %}</div>
+                <div class="sc-name">{{ card.name }}{% if picks_locked %} <span class="sc-own owned-trigger" data-owners="{{ card.owners | map('display_name') | join(', ') }}" data-golfer="{{ card.name }}" data-pct="{{ card.ownership_pct }}">{{ card.ownership_pct }}%</span>{% endif %}{% if show_cut_projections and card.mc_pct is not none %}<span class="mc-cut">{{ card.mc_pct }}%</span>{% endif %}</div>
                 <div class="sc-score" style="color:var(--augusta-gold)">{{ card.to_par or '--' }}</div>
             </div>
             <div class="sc-details">

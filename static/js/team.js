@@ -144,6 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
         html += '<div class="sc-details">';
         html += '<span class="sc-pos" style="color:var(--augusta-gold)">' + esc(c.position) + '</span>';
         html += '<span class="sc-own owned-trigger" data-golfer="' + esc(c.name) + '" data-owners="' + esc(c.owners) + '" data-pct="' + c.ownership_pct + '">' + c.ownership_pct + '%</span>';
+        if (c.mc_pct != null) html += '<span class="mc-cut">' + c.mc_pct + '%</span>';
         html += '</div></div>';
         return html;
     }
@@ -155,7 +156,9 @@ document.addEventListener("DOMContentLoaded", function () {
             html += '<div class="squad-card' + (c.counting ? ' counting' : '') + '">';
             html += '<div class="sc-tier">' + esc(c.tier_name) + '</div>';
             html += '<div class="sc-main">';
-            html += '<div class="sc-name">' + esc(c.name) + ' <span class="sc-own owned-trigger" data-owners="' + esc(c.owners) + '" data-golfer="' + esc(c.name) + '" data-pct="' + c.ownership_pct + '">' + c.ownership_pct + '%</span></div>';
+            html += '<div class="sc-name">' + esc(c.name) + ' <span class="sc-own owned-trigger" data-owners="' + esc(c.owners) + '" data-golfer="' + esc(c.name) + '" data-pct="' + c.ownership_pct + '">' + c.ownership_pct + '%</span>';
+            if (c.mc_pct != null) html += '<span class="mc-cut">' + c.mc_pct + '%</span>';
+            html += '</div>';
             html += '<div class="sc-score" style="color:var(--augusta-gold)">' + esc(c.to_par) + '</div>';
             html += '</div>';
             html += '<div class="sc-details">';

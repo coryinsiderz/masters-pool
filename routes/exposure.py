@@ -67,6 +67,21 @@ def exposure():
         )
         my_golfer_ids = {row[0] for row in cur.fetchall()}
 
+    # Cutline projection data
+    from models.tournament import get_tournament_state, get_all_scores
+    tournament = get_tournament_state(conn)
+    current_round = tournament.get("current_round", 0) if tournament else 0
+    cutline_probs = []
+    mc_map = {}
+    show_cut = Config.SHOW_CUT_PROJECTIONS and current_round <= 2
+    if show_cut:
+        from services.cutline import get_mc_map, compute_cutline_probs
+        mc_map = get_mc_map(conn)
+        all_scores = get_all_scores(conn)
+        for s in all_scores:
+            s["mc_probability"] = mc_map.get(s.get("golfer_id"))
+        cutline_probs = compute_cutline_probs(all_scores)
+
     conn.close()
 
     owner_map = {}
@@ -77,6 +92,7 @@ def exposure():
         golfer["ownership_pct"] = round(golfer["ownership_count"] / total_users * 100) if total_users else 0
         golfer["owners"] = owner_map.get(golfer["golfer_id"], [])
         golfer["tier_name"] = TIER_NAMES.get(golfer["tier"], str(golfer["tier"]))
+        golfer["mc_pct"] = round(mc_map.get(golfer["golfer_id"], 0) * 100) if show_cut and mc_map else None
 
     return render_template(
         "exposure.html",
@@ -84,4 +100,6 @@ def exposure():
         total_users=total_users,
         tier_names=TIER_NAMES,
         my_golfer_ids=my_golfer_ids,
+        show_cut_projections=show_cut,
+        cutline_probs=cutline_probs,
     )

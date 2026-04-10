@@ -1775,3 +1775,32 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     font-weight: 400;
     margin-left: 3px;
 }
+
+.cutline-dot {
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 6px;
+}
+
+/* ── Cutline summary bar (Pool page) ── */
+.cutline-bar {
+    text-align: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--augusta-gold);
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    margin-bottom: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border-top: 1px solid rgba(200, 169, 81, 0.4);
+    border-bottom: 1px solid rgba(200, 169, 81, 0.4);
+}
+
+/* Per-golfer MC% on pool mini-cards */
+.mc-cut {
+    display: block;
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Libre Baskerville', serif;
+    line-height: 1.2;
+}

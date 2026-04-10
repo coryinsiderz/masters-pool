@@ -69,88 +69,16 @@ def scores():
             s["ownership_pct"] = 0
             s["owners"] = []
 
-    # Join mc_probability from latest projection snapshot (rounds 1-2 only)
+    # Cut projection data (rounds 1-2 only, controlled by config flag)
     current_round = tournament.get("current_round", 0) if tournament else 0
-    projected_cut_score = None
     cutline_probs = []
-    if current_round <= 2:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                """SELECT gp.golfer_id, gp.mc_probability
-                   FROM golfer_projections gp
-                   WHERE gp.snapshot_time = (SELECT MAX(snapshot_time) FROM golfer_projections)"""
-            )
-            mc_map = {row["golfer_id"]: float(row["mc_probability"]) for row in cur.fetchall() if row["mc_probability"] is not None}
-
+    show_cut = Config.SHOW_CUT_PROJECTIONS and current_round <= 2
+    if show_cut:
+        from services.cutline import get_mc_map, compute_cutline_probs
+        mc_map = get_mc_map(conn)
         for s in all_scores:
             s["mc_probability"] = mc_map.get(s.get("golfer_id"))
-
-        # Compute multi-level cutline probabilities using top-50-and-ties model
-        import logging
-        _log = logging.getLogger(__name__)
-
-        from collections import defaultdict
-        score_groups = defaultdict(list)
-        for s in all_scores:
-            if s.get("status") == "active" and s.get("mc_probability") is not None:
-                score_groups[s.get("to_par", "")].append(s["mc_probability"])
-
-        def _to_par_sort_key(tp):
-            if tp == "E":
-                return 0
-            try:
-                return int(tp)
-            except (ValueError, TypeError):
-                return 999
-
-        # Build sorted list of (score, avg_mc, count)
-        sorted_scores = []
-        for tp in sorted(score_groups.keys(), key=_to_par_sort_key):
-            probs = score_groups[tp]
-            avg_mc = sum(probs) / len(probs)
-            sorted_scores.append((tp, avg_mc, len(probs)))
-
-        # Compute cumulative expected count (top 50 and ties)
-        cum_expected = 0.0
-        score_cum = []  # (score, avg_mc, count, cum_expected_after)
-        for tp, avg_mc, cnt in sorted_scores:
-            contribution = cnt * avg_mc
-            cum_expected += contribution
-            score_cum.append((tp, avg_mc, cnt, cum_expected))
-
-        _log.info("Cutline score groups (cumulative expected):")
-        for tp, avg_mc, cnt, cum in score_cum:
-            _log.info("  %4s: %2d golfers, avg MC %.1f%%, cum expected %.1f",
-                       tp, cnt, avg_mc * 100, cum)
-
-        # Find the crossing point: score where cum_expected first reaches ~50
-        # Take the 3 consecutive scores around that crossing
-        CUT_TARGET = 50.0
-        crossing_idx = None
-        for i, (tp, avg_mc, cnt, cum) in enumerate(score_cum):
-            if cum >= CUT_TARGET:
-                crossing_idx = i
-                break
-
-        if crossing_idx is not None:
-            # Take up to 1 score before and 1 after the crossing point
-            start = max(0, crossing_idx - 1)
-            end = min(len(score_cum), crossing_idx + 2)
-            candidates = score_cum[start:end]
-
-            # Weight each score by inverse distance from the crossing target
-            # The score whose cumulative is closest to 50 gets highest weight
-            weights = []
-            for tp, avg_mc, cnt, cum in candidates:
-                dist = abs(cum - CUT_TARGET) + 0.1  # avoid div by zero
-                weights.append((tp, 1.0 / dist))
-
-            total_w = sum(w for _, w in weights)
-            cutline_probs = [(tp, w / total_w) for tp, w in weights]
-            # Already sorted by score (candidates came from sorted list)
-
-        _log.info("Cutline probs: %s",
-                   [(tp, f"{p:.0%}") for tp, p in cutline_probs])
+        cutline_probs = compute_cutline_probs(all_scores)
     else:
         for s in all_scores:
             s["mc_probability"] = None
@@ -194,7 +122,7 @@ def scores():
         has_hole_data=has_hole_data,
         selected_round=selected_round,
         current_round=current_round,
-        projected_cut_score=projected_cut_score,
+        show_cut_projections=show_cut,
         cutline_probs=cutline_probs,
     )
 

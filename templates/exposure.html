@@ -6,6 +6,12 @@
 <div class="page-container">
     <h1>Ownership</h1>
 
+    {% if show_cut_projections and cutline_probs %}
+    <div class="cutline-bar">
+        Projected Cut{% for cp in cutline_probs %}{% if not loop.first %}<span class="cutline-dot">&middot;</span>{% endif %}<span class="cutline-score">{{ cp[0] }}</span><span class="cutline-pct">{{ (cp[1] * 100) | round(0) | int }}%</span>{% endfor %}
+    </div>
+    {% endif %}
+
     {% if golfers %}
     <div class="toggle-row">
         <button class="tab-btn tier-filter-btn active" data-tier="all">All</button>
@@ -38,7 +44,7 @@
                 data-topar="{{ gl.to_par or '' }}"
                 data-owned="{{ gl.ownership_pct }}"
                 {% if gl.golfer_id in my_golfer_ids %}data-mine="1"{% endif %}>
-                <td>{{ gl.name }}</td>
+                <td>{{ gl.name }}{% if show_cut_projections and gl.mc_pct is not none %}<span class="mc-pct">{{ gl.mc_pct }}%</span>{% endif %}</td>
                 <td>
                     <span class="owned-trigger" data-owners="{{ gl.owners | map('display_name') | join(', ') }}" data-golfer="{{ gl.name }}" data-pct="{{ gl.ownership_pct }}">{{ gl.ownership_pct }}%</span>
                 </td>

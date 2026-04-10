@@ -55,6 +55,7 @@ def _build_full_leaderboard(conn):
             own_count = ownership.get(gid, 0)
             own_pct = round(own_count / total_users * 100) if total_users else 0
             tiers[tier] = {
+                "golfer_id": gid,
                 "name": g.get("name", ""),
                 "masters_id": g.get("masters_id"),
                 "tier": tier,
@@ -136,20 +137,42 @@ def leaderboard():
             total_users=0,
             tier_names=TIER_NAMES,
             current_round=0,
+            show_cut_projections=False,
+            cutline_probs=[],
         )
     from app import get_db_connection
     from models.tournament import get_tournament_state
     conn = get_db_connection()
     standings, total_users = _build_full_leaderboard(conn)
     tournament = get_tournament_state(conn)
-    conn.close()
     current_round = tournament.get("current_round", 0) if tournament else 0
+
+    # Cut projection data (rounds 1-2 only, controlled by config flag)
+    cutline_probs = []
+    show_cut = Config.SHOW_CUT_PROJECTIONS and current_round <= 2
+    if show_cut:
+        from services.cutline import get_mc_map, compute_cutline_probs
+        mc_map = get_mc_map(conn)
+        # Attach mc_probability to each golfer in tier data
+        for entry in standings:
+            for t, gdata in entry.get("tiers", {}).items():
+                gdata["mc_probability"] = mc_map.get(gdata.get("golfer_id"))
+        # Build flat list for cutline computation
+        from models.tournament import get_all_scores
+        all_scores = get_all_scores(conn)
+        for s in all_scores:
+            s["mc_probability"] = mc_map.get(s.get("golfer_id"))
+        cutline_probs = compute_cutline_probs(all_scores)
+
+    conn.close()
     return render_template(
         "leaderboard.html",
         standings=standings,
         total_users=total_users,
         tier_names=TIER_NAMES,
         current_round=current_round,
+        show_cut_projections=show_cut,
+        cutline_probs=cutline_probs,
     )
 
 

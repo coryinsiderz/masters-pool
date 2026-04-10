@@ -56,6 +56,19 @@ def team():
         else:
             ownership = {}
             owner_names = {}
+
+    # Cutline projection data (before conn.close)
+    cutline_probs = []
+    show_cut = Config.SHOW_CUT_PROJECTIONS and current_round <= 2
+    if show_cut:
+        from services.cutline import get_mc_map, compute_cutline_probs
+        from models.tournament import get_all_scores
+        mc_map = get_mc_map(conn)
+        all_scores = get_all_scores(conn)
+        for s in all_scores:
+            s["mc_probability"] = mc_map.get(s.get("golfer_id"))
+        cutline_probs = compute_cutline_probs(all_scores)
+
     conn.close()
 
     scores_by_id = {s["golfer_id"]: s for s in scores}
@@ -85,6 +98,7 @@ def team():
             "round_3": score.get("round_3"),
             "round_4": score.get("round_4"),
             "current_round_par": score.get("current_round_par"),
+            "mc_pct": round(mc_map.get(pick["golfer_id"], 0) * 100) if show_cut and mc_map else None,
         })
 
     # Calculate team to-par and mark counting golfers
@@ -98,6 +112,8 @@ def team():
         has_picks=len(picks) > 0,
         total_users=total_users,
         current_round=current_round,
+        show_cut_projections=show_cut,
+        cutline_probs=cutline_probs,
     )
 
 
@@ -209,6 +225,14 @@ def team_detail(user_id):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("SELECT username FROM users WHERE id = %s", (user_id,))
         user_row = cur.fetchone()
+
+    # MC probability for API response
+    show_cut_api = Config.SHOW_CUT_PROJECTIONS and current_round <= 2
+    mc_map_api = {}
+    if show_cut_api:
+        from services.cutline import get_mc_map
+        mc_map_api = get_mc_map(conn)
+
     conn.close()
 
     username = user_row["username"] if user_row else ""
@@ -257,6 +281,7 @@ def team_detail(user_id):
             "round_4": score.get("round_4"),
             "current_round": current_round,
             "current_round_par": score.get("current_round_par"),
+            "mc_pct": round(mc_map_api.get(gid, 0) * 100) if show_cut_api and mc_map_api else None,
         })
 
     _mark_counting(cards)
@@ -283,6 +308,7 @@ def team_detail(user_id):
             "round_4": c["round_4"],
             "current_round": c["current_round"],
             "current_round_par": c["current_round_par"],
+            "mc_pct": c.get("mc_pct"),
         } for c in cards],
     })
 

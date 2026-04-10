@@ -6,6 +6,12 @@
 <div class="page-container">
     <h1>#model</h1>
 
+    {% if show_cut_projections and cutline_probs %}
+    <div class="cutline-bar">
+        Projected Cut{% for cp in cutline_probs %}{% if not loop.first %}<span class="cutline-dot">&middot;</span>{% endif %}<span class="cutline-score">{{ cp[0] }}</span><span class="cutline-pct">{{ (cp[1] * 100) | round(0) | int }}%</span>{% endfor %}
+    </div>
+    {% endif %}
+
     <div class="toggle-row proj-tabs">
         <button class="filter-btn active" id="tab-justme">Just Me</button>
         <button class="filter-btn" id="tab-everyone">Everyone</button>
