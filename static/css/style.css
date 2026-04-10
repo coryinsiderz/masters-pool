@@ -1745,21 +1745,24 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     line-height: 1;
 }
 
-.cutline-cell {
-    text-align: center;
-    font-size: 0.7rem;
+.cutline-cell-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    white-space: nowrap;
+    padding: 4px 10px !important;
+    background: rgba(0, 0, 0, 0.6);
+    border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
+    border-bottom: 1px solid rgba(200, 169, 81, 0.4) !important;
     font-family: 'Cormorant Garamond', serif;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--augusta-gold);
     letter-spacing: 0.5px;
-    padding: 4px 0 !important;
-    background: linear-gradient(
-        to right,
-        transparent 0%,
-        rgba(200, 169, 81, 0.25) 20%,
-        rgba(200, 169, 81, 0.25) 80%,
-        transparent 100%
-    );
+}
+
+.cutline-cell-fill {
+    padding: 0 !important;
     border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
     border-bottom: 1px solid rgba(200, 169, 81, 0.4) !important;
 }
