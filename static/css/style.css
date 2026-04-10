@@ -1728,3 +1728,50 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
         max-width: 85px;
     }
 }
+
+/* ── Cutline / MC probability ── */
+.mc-pct {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Libre Baskerville', serif;
+}
+
+.cutline-row td {
+    padding: 0 !important;
+    border: none !important;
+    height: auto;
+    line-height: 1;
+}
+
+.cutline-cell {
+    text-align: center;
+    font-size: 0.7rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    color: var(--augusta-gold);
+    letter-spacing: 0.5px;
+    padding: 4px 0 !important;
+    background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(200, 169, 81, 0.25) 20%,
+        rgba(200, 169, 81, 0.25) 80%,
+        transparent 100%
+    );
+    border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
+    border-bottom: 1px solid rgba(200, 169, 81, 0.4) !important;
+}
+
+.cutline-score {
+    color: var(--augusta-gold);
+    font-weight: 700;
+    margin-left: 12px;
+}
+
+.cutline-pct {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+    margin-left: 3px;
+}

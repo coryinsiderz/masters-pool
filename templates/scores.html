@@ -100,10 +100,18 @@
             </tr>
         </thead>
         <tbody>
+            {% set prev_topar = namespace(val=none) %}
+            {% set cutline_scores = cutline_probs | map(attribute=0) | list if cutline_probs else [] %}
             {% for s in scores %}
+            {% if current_round <= 2 and cutline_probs and s.status == 'active' and s.to_par != prev_topar.val and s.to_par in cutline_scores %}
+            {% for cp in cutline_probs %}{% if cp[0] == s.to_par %}
+            <tr class="cutline-row"><td colspan="10" class="cutline-cell">Projected Cut<span class="cutline-score">{{ cp[0] }}</span><span class="cutline-pct">{{ (cp[1] * 100) | round(0) | int }}%</span></td></tr>
+            {% endif %}{% endfor %}
+            {% endif %}
+            {% set prev_topar.val = s.to_par %}
             <tr{% if s.golfer_id in my_golfer_ids %} class="my-player"{% endif %} data-pos="{{ s.position|replace('T','')|int if s.position and s.status == 'active' else 999 }}" data-player="{{ s.name }}" data-owned="{{ s.ownership_pct or 0 }}" data-topar="{{ s.to_par or '' }}" data-thru="{{ s.thru or '' }}" data-r1="{{ s.round_1 or '' }}" data-r2="{{ s.round_2 or '' }}" data-r3="{{ s.round_3 or '' }}" data-r4="{{ s.round_4 or '' }}" data-total="{{ s.total_strokes or '' }}">
                 <td class="sticky-col-narrow">{{ s.position if s.status == 'active' else '' }}</td>
-                <td class="sticky-col-2">{{ s.name }}</td>
+                <td class="sticky-col-2">{{ s.name }}{% if current_round <= 2 and s.mc_probability is not none %}<span class="mc-pct">{{ (s.mc_probability * 100) | round(0) | int }}%</span>{% endif %}</td>
                 <td class="owned-cell">
                     {% if s.ownership_count > 0 %}
                     <span class="owned-trigger" data-owners="{{ s.owners | map('display_name') | join(', ') }}" data-golfer="{{ s.name }}" data-pct="{{ s.ownership_pct }}">{{ s.ownership_pct }}%</span>
