@@ -111,7 +111,25 @@ def compute_cutline_probs(scores_with_mc):
         total_w = sum(w for _, w in weights)
         cutline_probs = [(tp, w / total_w) for tp, w in weights]
 
-    logger.info("Cutline probs: %s",
+    logger.info("Cutline probs (raw): %s",
                  [(tp, f"{p:.0%}") for tp, p in cutline_probs])
+
+    # Sharpen probabilities based on round completion
+    if cutline_probs:
+        active = [s for s in scores_with_mc if s.get("status") == "active"]
+        finished = sum(1 for s in active if s.get("thru") == "F")
+        total_active = len(active)
+        completion_ratio = finished / total_active if total_active else 0.0
+
+        sharpening_factor = 1 + (completion_ratio * 50)
+        sharpened = [(tp, p ** sharpening_factor) for tp, p in cutline_probs]
+        total_s = sum(p for _, p in sharpened)
+        if total_s > 0:
+            cutline_probs = [(tp, p / total_s) for tp, p in sharpened]
+
+        logger.info("Cutline sharpening: %.0f%% complete, factor %.1f",
+                     completion_ratio * 100, sharpening_factor)
+        logger.info("Cutline probs (sharpened): %s",
+                     [(tp, f"{p:.0%}") for tp, p in cutline_probs])
 
     return cutline_probs
