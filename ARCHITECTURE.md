@@ -37,11 +37,11 @@ masters-pool/
 
   routes/
     __init__.py
-    auth.py               Login, register (first char uppercase, recovery contact), logout (Blueprint: auth)
+    auth.py               Login, register (first letter each word capitalized, recovery contact), logout (Blueprint: auth)
     picks.py              Make/edit picks with deadline enforcement, tier validation, tiers 4-6 dropup (Blueprint: picks)
     leaderboard.py        Pool standings with ownership data, sortable grid, gated behind picks lock (Blueprint: leaderboard)
     scores.py             Tournament scores: leaderboard + Augusta board, ownership stripped pre-lock (Blueprint: scores)
-    admin.py              Player management, ESPN import, polling controls, user delete, projections admin (Blueprint: admin)
+    admin.py              Player management, ESPN import/backfill, polling controls, user delete, projections admin (Blueprint: admin)
     team.py               Squad page with vertical cards, counting indicators, ownership hidden pre-lock (Blueprint: team)
     exposure.py           Golfer ownership analysis, tier/player filters, redirects pre-lock (Blueprint: exposure)
     projections.py        Projections chart page, /api/projections/history endpoint (Blueprint: projections)
@@ -50,8 +50,8 @@ masters-pool/
   services/
     __init__.py
     espn.py               ESPN API: fetch, parse (with thru from hole counts), scorecard data, field listing
-    scoring.py            4-of-6 scoring engine, penalty calculation, leaderboard builder with tiebreakers
-    projections.py        Projections: fetch_projections(), fetch_live_projections(), compute_team_projections(), match_dg_names()
+    scoring.py            4-of-6 scoring engine (sorts by to_par not strokes), team_to_par computation, leaderboard builder with tiebreakers
+    projections.py        Projections: fetch (gbt "players"/"to_par" keys), compute_team_projections (ESPN actuals, partial scores), match_dg_names()
 
   templates/
     base.html             Master template: nav (includes Projections link), ownership modal, background, fonts
@@ -79,7 +79,7 @@ masters-pool/
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | SERIAL | PRIMARY KEY | Auto-increment user ID |
-| username | VARCHAR(50) | UNIQUE NOT NULL | Display name, first char uppercased at registration |
+| username | VARCHAR(50) | UNIQUE NOT NULL | Display name, first letter of each word capitalized at registration |
 | password_hash | VARCHAR(255) | NOT NULL | Werkzeug pbkdf2:sha256 hash |
 | is_admin | BOOLEAN | DEFAULT FALSE | Not currently used for admin checks |
 | recovery_contact | VARCHAR(100) | nullable | Answer for account recovery |
@@ -90,9 +90,10 @@ masters-pool/
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | SERIAL | PRIMARY KEY | Auto-increment golfer ID (insertion order = Betfair odds order) |
-| espn_id | VARCHAR(20) | nullable | ESPN athlete ID for score matching (pending backfill) |
+| espn_id | VARCHAR(20) | nullable | ESPN athlete ID for score matching (backfilled for all 91) |
 | name | VARCHAR(100) | NOT NULL | Full player name |
 | dg_name | VARCHAR(200) | nullable | DataGolf API name ("Last, First" format) for projections matching |
+| masters_id | VARCHAR | nullable | Masters.com player profile ID (for profile links, not yet wired to frontend) |
 | tier | INTEGER | NOT NULL, CHECK 1-7 | Pool tier assignment (7 = "X", excluded from picks) |
 | created_at | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 
@@ -148,7 +149,7 @@ masters-pool/
 | id | SERIAL | PRIMARY KEY | Auto-increment |
 | user_id | INTEGER | FK -> users | Which user's team |
 | projected_total | NUMERIC | nullable | Best 4-of-6 projected to-par total |
-| actual_total | NUMERIC | nullable | Best 4-of-6 actual to-par total (null if <4 have scores) |
+| actual_total | NUMERIC | nullable | Best 4-of-6 actual to-par total (from ESPN scores, partial if <4 started, 0 if none) |
 | snapshot_time | TIMESTAMP | DEFAULT NOW() | When this was computed |
 
 ## Route map
@@ -158,7 +159,7 @@ masters-pool/
 | GET | /health | app.health | None | Returns 200 OK |
 | GET | / | leaderboard.leaderboard | Login | Redirects to leaderboard |
 | GET/POST | /login | auth.login | None | Login form + process |
-| GET/POST | /register | auth.register | None | Registration (first char uppercase) |
+| GET/POST | /register | auth.register | None | Registration (first letter each word capitalized) |
 | GET | /logout | auth.logout | None | Clear session |
 | GET/POST | /picks | picks.picks | Login | Pick selection (deadline enforced) |
 | GET | /team | team.team | Login | Squad page |
@@ -179,6 +180,7 @@ masters-pool/
 | GET | /admin/espn-field | admin.espn_field | Admin | ESPN field listing |
 | POST | /admin/import-field | admin.import_field | Admin | Import ESPN field |
 | GET | /admin/update-scores | admin.update_scores_route | Admin | Pull ESPN scores |
+| GET | /admin/backfill-espn-ids | admin.backfill_espn_ids | Admin | Match ESPN names to golfers, set espn_id |
 | POST | /admin/bulk-tier-update | admin.bulk_tier_update | Admin | Batch tier reassignment |
 | GET | /admin/polling-status | admin.polling_status | Admin | Scheduler state JSON |
 | POST | /admin/set-poll-interval | admin.set_poll_interval | Admin | Change ESPN polling interval |
@@ -203,17 +205,17 @@ masters-pool/
 | ENABLE_POLLING | "1" | Enable ESPN background polling |
 | ESPN_POLL_INTERVAL | 300 | ESPN poll interval in seconds |
 | ENABLE_PROJECTIONS_POLLING | "0" | Enable projections background polling (Railway only) |
-| PROJECTIONS_POLL_INTERVAL | 1800 | Projections poll interval in seconds (30 min) |
+| PROJECTIONS_POLL_INTERVAL | 300 | Projections poll interval in seconds (5 min) |
 | PROJECTIONS_API_KEY | (falls back to DG_API_KEY) | API key for projections endpoint |
 | DG_API_KEY | in .env | DataGolf API key |
 
 ## Projections chart (templates/projections.html)
 
 - **Chart.js** loaded via CDN with chartjs-adapter-date-fns for time-based x-axis
-- **X-axis**: fixed tournament window Thu Apr 9 7:30am to Sun Apr 12 7:00pm ET, display: false (no labels/grid)
+- **X-axis**: fixed tournament window Thu Apr 9 7:40am to Sun Apr 12 7:00pm ET, display: false (no labels/grid)
 - **Y-axis**: inverted (reverse: true), to-par format, no grid lines, tick labels visible
 - **Two datasets per user**: "actual" segment (solid line through snapshot actuals) + "projected" segment (thinner/more transparent line from last actual to projected finish at TOURNEY_END)
 - **Live line**: vertical solid line at Date.now(), faint gold rgba(200,169,81,0.2), "Live" label inside chart area
 - **Tabs**: Just Me (default) / Everyone / Chosen Ones (dropdown-in-tab-bar matching team.html Their Team pattern)
-- **Legend**: three-column (Name / Cur / Proj), sortable by any column, Chosen Ones grouped at top with gold divider
+- **Legend**: three-column (Name / Current / Proj), sortable by any column, Chosen Ones grouped at top with gold divider
 - **Entrant list**: server-rendered from route context (not from projection data), works even with zero snapshots

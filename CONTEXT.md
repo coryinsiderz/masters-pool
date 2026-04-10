@@ -18,7 +18,7 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 
 | Feature | Route | Status |
 |---------|-------|--------|
-| User registration | POST /register | Working, first char uppercase, recovery contact, modal on login page |
+| User registration | POST /register | Working, first letter of each word capitalized (no .title()), recovery contact, modal on login page |
 | User login | POST /login | Working, case-insensitive username lookup |
 | User logout | GET /logout | Working |
 | Session management | before_request hook | 30-day permanent sessions |
@@ -36,7 +36,7 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 | ESPN import | POST /admin/import-field | Bulk import golfers from ESPN field |
 | Score update | GET /admin/update-scores | Manual ESPN score pull |
 | Background polling | APScheduler | Auto-polls ESPN at configurable intervals (1min/5min/off) |
-| Projections polling | APScheduler | Auto-fetches projections every 30min during tournament window, Railway only |
+| Projections polling | APScheduler | Auto-fetches projections every 5min during tournament window, Railway only |
 | Projections admin | POST /api/admin/fetch-projections-now | Manual projection fetch + team computation |
 | Projections toggle | POST /api/admin/projections-polling | Enable/disable projections polling at runtime |
 | DG name matching | POST /api/admin/match-dg-names | One-time setup: match API player names to golfers table |
@@ -50,7 +50,8 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 | Password recovery | POST /api/verify-recovery, /api/reset-password | Working, case-insensitive recovery question |
 | Register modal | Login page modal | Working, no close on outside click, "Recovery Question Answer" label |
 | Payment tracking | Venmo deeplink + admin toggle | Paid column, "Pay @csbaltz $10 on Venmo" deeplink without amount prefill |
-| Rules page | GET /rules | Scoring, navigation guide, projections description, dynamic payouts |
+| ESPN ID backfill | GET /admin/backfill-espn-ids | Matches ESPN names to golfers by normalized name, sets espn_id |
+| Rules page | GET /rules | Scoring, navigation guide, projections description, hardcoded payouts ($150/$60/$30) |
 | Health check | GET /health | Returns 200 OK |
 
 ## External APIs
@@ -68,7 +69,8 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 
 ### Projections API (gbt.up.railway.app)
 - Pool app fetches from gbt.up.railway.app/api/projections/live with X-API-Key header
-- Returns per-golfer projected_final_to_par and actual_to_par
+- Response has "players" key (not "data"), each with "to_par" (not "projected_to_par") and "actual_to_par"
+- Actual scores in projections are sourced from ESPN golfer_scores table, not gbt actual_to_par (more reliable)
 - Key stored as PROJECTIONS_API_KEY or DG_API_KEY in .env
 
 ## Projections infrastructure
@@ -77,14 +79,15 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 - **team_projections table**: projected_total, actual_total, snapshot_time
 - **dg_name column** on golfers table for API name matching
 - **Name matching**: fuzzy match by last name, 91/91 matched for Masters field (6 required manual diacritical fixes)
-- **Polling**: APScheduler job, 30min interval during tournament window (Thu Apr 9 7:30am - Sun Apr 12 7:00pm ET), controlled by ENABLE_PROJECTIONS_POLLING env var, Railway only
+- **Polling**: APScheduler job, 5min interval during tournament window (Thu Apr 9 7:40am - Sun Apr 12 7:00pm ET), controlled by ENABLE_PROJECTIONS_POLLING env var, Railway only
+- **Actuals**: Computed from ESPN golfer_scores.to_par, not from gbt actual_to_par. Partial actuals shown even if <4 golfers have started. Not-started golfers included as E (0).
 
 ## Masters field
 
 - 91 players loaded in Betfair odds order (IDs 268-358)
-- All on tier 1 pending tier assignment
-- ESPN IDs pending backfill (ESPN hasn't switched from Valero to Masters yet)
-- Tier 7 "X" for excluded/withdrawn players (not shown in pick selection)
+- Tiers assigned (1-6), tier 7 "X" for excluded/withdrawn players (not shown in pick selection)
+- ESPN IDs backfilled for all 91 golfers via /admin/backfill-espn-ids (3 manual fixes: Johnny Keefer, Nico Echavarria, Sam Stevens — nickname vs formal name)
+- masters_id column populated for all 91 (Masters.com player profile IDs, not yet wired to frontend)
 - Golfers sorted by ID (insertion order = Betfair odds order), not alphabetically
 
 ## Pre-lock gating
@@ -99,22 +102,22 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 ## Key decisions
 
 - **Tier names** (in order): Tier 1, Strong Side, Weak Side, Maybe, Meh, Do You Believe in Miracles, X
-- **Scoring**: Best 4 of 6 cumulative strokes. MC/WD/DQ golfers get worst-active-score + 1.
+- **Scoring**: Best 4 of 6 by to-par value. MC/WD/DQ golfers get worst-active-score + 1. Pool standings sorted by team_to_par, not total strokes.
 - **Tiebreaker**: Best individual finishing position among counting golfers
-- **Picks deadline**: 2026-04-09T07:30:00-04:00 (enforced server-side)
+- **Picks deadline**: 2026-04-09T07:40:00-04:00 (enforced server-side)
 - **Admin**: Determined by ADMIN_USERNAME env var (default "cory"), not the is_admin DB column
 - **Fonts**: Cormorant Garamond (titles/brand, weight 500-600), Libre Baskerville (body/tables)
 - **Colors**: --augusta-green #006747, --augusta-gold #C8A951, --augusta-cream #FFF8E7, --over-par #C41E3A, --under-par #00a86b
 - **To-par display**: All gold (#C8A951) everywhere, no red/green color coding
 - **Custom dropdowns**: Replace all native <select> elements for font consistency
-- **Username storage**: First char uppercased at registration, case-insensitive lookup via LOWER()
+- **Username storage**: First letter of each word capitalized at registration (no .title()), case-insensitive lookup via LOWER()
 - **Password hashing**: pbkdf2:sha256 (not scrypt) for Python 3.9 compatibility
 - **Nav order**: My Team, Pool, Tournament, Exposure, Projections, Rules, Admin (if admin), Logout
-- **Page titles (h1)**: Squad, Live Pool Scoring, What's Goin On at Augusta, Ownership, #model, How It's Supposed to Work
+- **Page titles (h1)**: Squad (with team to-par), Score Card, What's Goin On at Augusta, Ownership, #model, How It's Supposed to Work
 - **Picks dropdowns**: Tiers 4-6 open upward (dropup), gold scrollbar, gradient scroll indicator
 - **Venmo**: deeplink without amount prefill, display says "$10", web fallback
 - **Modals**: Register and forgot-password modals don't close on outside click, only via Cancel button
-- **Payouts**: 60/25/15 split rounded to nearest $5, shown TBD pre-lock
+- **Payouts**: Hardcoded $150/$60/$30 (24 entries × $10), shown TBD pre-lock
 
 ## Known issues and quirks
 
@@ -125,6 +128,6 @@ Baltz Masters Pool is a private golf pool web app for the 2026 Masters Tournamen
 - **ESPN API is unofficial**: The scoreboard endpoint can change without notice. All field access handles missing data gracefully.
 - **Circular imports**: Routes import get_db_connection lazily inside functions to avoid circular import with app.py.
 - **Sticky column gap**: Pool leaderboard shows a faint white line between Name and Total columns on mobile horizontal scroll.
-- **ESPN IDs pending**: Masters golfers inserted manually without ESPN IDs. Need backfill once ESPN loads Masters field.
+- **ESPN IDs**: All 91 backfilled. Three required manual fixes due to nickname mismatches (Johnny/John Keefer, Nico/Nicolas Echavarria, Sam/Samuel Stevens).
 - **Scheduler double-start**: In debug mode, Flask's reloader spawns two processes. Scheduler checks WERKZEUG_RUN_MAIN to only start once.
 - **Mock scorecard data**: When no hole-by-hole data is available from ESPN, falls back to mock random data. Remove before go-live.
