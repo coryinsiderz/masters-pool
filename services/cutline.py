@@ -80,19 +80,26 @@ def compute_cutline_probs(scores_with_mc):
         logger.info("  %4s: %2d golfers, avg MC %.1f%%, cum expected %.1f",
                      tp, cnt, avg_mc * 100, cum)
 
-    # Find the crossing point: score where cum_expected first reaches ~50
+    # Find the score whose cumulative expected count is nearest to 50
     CUT_TARGET = 50.0
     crossing_idx = None
+    best_dist = float("inf")
     for i, (tp, avg_mc, cnt, cum) in enumerate(score_cum):
-        if cum >= CUT_TARGET:
+        dist = abs(cum - CUT_TARGET)
+        if dist < best_dist:
+            best_dist = dist
             crossing_idx = i
-            break
 
     cutline_probs = []
     if crossing_idx is not None:
-        # Take up to 1 score before and 1 after the crossing point
-        start = max(0, crossing_idx - 1)
-        end = min(len(score_cum), crossing_idx + 2)
+        # Center 3-score band on the nearest-to-50 score
+        n = len(score_cum)
+        if crossing_idx == 0:
+            start, end = 0, min(n, 3)
+        elif crossing_idx >= n - 1:
+            start, end = max(0, n - 3), n
+        else:
+            start, end = crossing_idx - 1, crossing_idx + 2
         candidates = score_cum[start:end]
 
         # Weight each score by inverse distance from the crossing target

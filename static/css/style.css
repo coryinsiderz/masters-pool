@@ -1738,19 +1738,12 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
     font-family: 'Libre Baskerville', serif;
 }
 
-.cutline-row td {
-    padding: 0 !important;
-    border: none !important;
-    height: auto;
-    line-height: 1;
-}
-
 .cutline-cell-sticky {
     position: sticky;
     left: 0;
     z-index: 1;
     white-space: nowrap;
-    padding: 4px 10px !important;
+    padding: 20px 10px !important;
     background: rgba(0, 0, 0, 0.6);
     border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
     border-bottom: 1px solid rgba(200, 169, 81, 0.4) !important;
@@ -1762,7 +1755,7 @@ tbody tr:nth-child(even) .sticky-col-2 + td {
 }
 
 .cutline-cell-fill {
-    padding: 0 !important;
+    padding: 20px 0 !important;
     border-top: 1px solid rgba(200, 169, 81, 0.4) !important;
     border-bottom: 1px solid rgba(200, 169, 81, 0.4) !important;
 }
