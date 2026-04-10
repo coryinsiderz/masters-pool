@@ -116,8 +116,9 @@
                 {% for r in [1, 2, 3, 4] %}
                 {% set rs = s['round_' ~ r] %}
                 {% if r < current_round and rs %}<td>{{ rs }}</td>
-                {% elif r == current_round and s.thru and s.thru != 'F' %}<td>--</td>
                 {% elif r == current_round and s.thru == 'F' and rs %}<td>{{ rs }}</td>
+                {% elif r == current_round and s.current_round_par and s.current_round_par != '-' and s.thru %}<td style="color:#fff">{{ s.current_round_par }}</td>
+                {% elif r == current_round %}<td>--</td>
                 {% elif rs and r <= current_round %}<td>{{ rs }}</td>
                 {% else %}<td>--</td>
                 {% endif %}
