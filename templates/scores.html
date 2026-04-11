@@ -124,7 +124,7 @@
                     <span class="owned-none">-</span>
                     {% endif %}
                 </td>
-                <td style="color:var(--augusta-gold);font-weight:700">{{ s.to_par or '--' }}</td>
+                <td style="color:var(--augusta-gold);font-weight:700">{{ s.effective_to_par or s.to_par or '--' }}</td>
                 <td>{% if s.status in ('MC', 'WD', 'DQ') %}{{ s.status }}{% elif s.thru == 'F' %}F{% elif s.thru %}{{ s.thru }}{% else %}--{% endif %}</td>
                 {% for r in [1, 2, 3, 4] %}
                 {% set rs = s['round_' ~ r] %}

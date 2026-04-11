@@ -83,6 +83,15 @@ def scores():
         for s in all_scores:
             s["mc_probability"] = None
 
+    # Compute effective to_par for MC/WD/DQ golfers (worst active + 1)
+    from services.scoring import calculate_penalty_to_par
+    penalty_to_par = calculate_penalty_to_par(conn)
+    if penalty_to_par is not None:
+        penalty_to_par_str = f"+{penalty_to_par}" if penalty_to_par > 0 else ("E" if penalty_to_par == 0 else str(penalty_to_par))
+        for s in all_scores:
+            if s.get("status") in ("MC", "WD", "DQ"):
+                s["effective_to_par"] = penalty_to_par_str
+
     # Split into active and cut
     active = []
     cut = []

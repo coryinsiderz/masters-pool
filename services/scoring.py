@@ -21,7 +21,35 @@ def calculate_penalty_score(conn):
     return None
 
 
-def calculate_team_score(golfer_scores, penalty_score):
+def calculate_penalty_to_par(conn):
+    """Return worst to_par among active golfers + 1, as an integer.
+
+    Parses to_par strings ('E'->0, '+5'->5, '-3'->-3) and returns max + 1.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT to_par FROM golfer_scores WHERE status = 'active' AND to_par IS NOT NULL"
+        )
+        rows = cur.fetchall()
+
+    worst = None
+    for (tp,) in rows:
+        if tp == "E":
+            val = 0
+        else:
+            try:
+                val = int(tp)
+            except (ValueError, TypeError):
+                continue
+        if worst is None or val > worst:
+            worst = val
+
+    if worst is not None:
+        return worst + 1
+    return None
+
+
+def calculate_team_score(golfer_scores, penalty_score, penalty_to_par=None):
     """Calculate best-4-of-6 team score.
 
     Args:
@@ -29,6 +57,7 @@ def calculate_team_score(golfer_scores, penalty_score):
             golfer_id, name, total_strokes, status, position, tier,
             round_1, round_2, round_3, round_4
         penalty_score: int or None, the penalty for MC/WD/DQ golfers
+        penalty_to_par: int or None, the to_par penalty for MC/WD/DQ golfers
 
     Returns:
         dict with team_total, counting_golfers, bench_golfers, all_golfers
@@ -48,8 +77,13 @@ def calculate_team_score(golfer_scores, penalty_score):
         entry = dict(g)
         if entry.get("status") in ("MC", "WD", "DQ"):
             entry["effective_strokes"] = penalty_score if penalty_score else None
+            if penalty_to_par is not None:
+                entry["effective_to_par"] = f"+{penalty_to_par}" if penalty_to_par > 0 else ("E" if penalty_to_par == 0 else str(penalty_to_par))
+            else:
+                entry["effective_to_par"] = entry.get("to_par", "")
         else:
             entry["effective_strokes"] = entry.get("total_strokes")
+            entry["effective_to_par"] = entry.get("to_par", "")
         scored.append(entry)
 
     # If any golfer has no effective score, we can't fully calculate
@@ -65,11 +99,11 @@ def calculate_team_score(golfer_scores, penalty_score):
             "all_golfers": scored,
         }
 
-    # Parse to_par for sorting: "E"->0, "-1"->-1, "+2"->2, empty->0.5, MC/WD/DQ->99
+    # Parse to_par for sorting: "E"->0, "-1"->-1, "+2"->2, empty->0.5, MC/WD/DQ->penalty
     # Golfers who haven't started (no thru) sort at 0.5: after real E but before +1
     def _to_par_num(s):
         if s.get("status") in ("MC", "WD", "DQ"):
-            return 99
+            return penalty_to_par if penalty_to_par is not None else 99
         tp = s.get("to_par", "")
         thru = s.get("thru", "")
         if not tp or tp == "--":
@@ -110,6 +144,7 @@ def build_leaderboard(conn):
         user_id, username, team_total, counting_golfers, bench_golfers, rank
     """
     penalty_score = calculate_penalty_score(conn)
+    penalty_to_par = calculate_penalty_to_par(conn)
 
     # Get all users who have picks
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -141,7 +176,7 @@ def build_leaderboard(conn):
             )
             golfer_scores = cur.fetchall()
 
-        result = calculate_team_score(golfer_scores, penalty_score)
+        result = calculate_team_score(golfer_scores, penalty_score, penalty_to_par)
         standings.append({
             "user_id": user["user_id"],
             "username": user["username"],

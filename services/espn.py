@@ -115,13 +115,10 @@ def parse_leaderboard(data):
             total_strokes = None
 
         # Determine golfer status: active, MC, WD, DQ
-        # If tournament is post-round-2+ and golfer only has 2 rounds,
-        # they missed the cut
+        # ESPN doesn't explicitly mark cut players. We detect MC by comparing
+        # against the cut score (computed in a second pass below).
         golfer_status = "active"
-        num_rounds_played = sum(1 for v in round_scores.values() if v is not None)
-        if tournament_status == "complete" or current_round > 2:
-            if num_rounds_played == 2 and current_round > 2:
-                golfer_status = "MC"
+        num_rounds_played = sum(1 for v in round_scores.values() if v is not None and v > 0)
 
         # Thru: derive from hole-by-hole linescore count
         # Per-golfer hole count is always the primary thru source.
@@ -163,7 +160,44 @@ def parse_leaderboard(data):
             "thru": thru,
             "current_round": current_round,
             "current_round_par": current_round_par,
+            "_num_rounds_played": num_rounds_played,
         })
+
+    # Second pass: detect MC players by 36-hole cut score (top 50 and ties)
+    if current_round > 2:
+        MASTERS_PAR_36 = 144  # 72 * 2
+
+        # Compute 36-hole to-par for each golfer
+        for g in golfers:
+            r1 = g.get("round_1") or 0
+            r2 = g.get("round_2") or 0
+            if r1 > 0 and r2 > 0:
+                g["_36h_to_par"] = (r1 + r2) - MASTERS_PAR_36
+            else:
+                g["_36h_to_par"] = 999
+
+        # Sort by 36-hole score, find the cut score at position 50
+        by_36h = sorted(golfers, key=lambda g: g["_36h_to_par"])
+        cut_score = None
+        if len(by_36h) >= 50:
+            cut_score = by_36h[49]["_36h_to_par"]
+
+        if cut_score is not None:
+            for g in golfers:
+                if g["_36h_to_par"] > cut_score:
+                    g["status"] = "MC"
+                    g["thru"] = "MC"
+
+            mc_count = sum(1 for g in golfers if g["status"] == "MC")
+            logger.info("Cut score (36h): +%d, marked %d golfers as MC", cut_score, mc_count)
+
+        # Clean up
+        for g in golfers:
+            g.pop("_36h_to_par", None)
+
+    # Clean up internal field
+    for g in golfers:
+        del g["_num_rounds_played"]
 
     logger.info("Parsed %d golfers from ESPN data", len(golfers))
     return {"tournament": tournament, "golfers": golfers}

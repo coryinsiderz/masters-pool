@@ -59,7 +59,7 @@ def _build_full_leaderboard(conn):
                 "name": g.get("name", ""),
                 "masters_id": g.get("masters_id"),
                 "tier": tier,
-                "to_par": g.get("to_par", ""),
+                "to_par": g.get("effective_to_par") or g.get("to_par", ""),
                 "total_strokes": g.get("effective_strokes") or g.get("total_strokes"),
                 "thru": g.get("thru", ""),
                 "status": g.get("status", "active"),

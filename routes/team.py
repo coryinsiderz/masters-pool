@@ -57,6 +57,10 @@ def team():
             ownership = {}
             owner_names = {}
 
+    # Compute MC penalty to_par (before conn.close)
+    from services.scoring import calculate_penalty_to_par
+    penalty_to_par = calculate_penalty_to_par(conn)
+
     # Cutline projection data (before conn.close)
     cutline_probs = []
     show_cut = Config.SHOW_CUT_PROJECTIONS and current_round <= 2
@@ -100,6 +104,13 @@ def team():
             "current_round_par": score.get("current_round_par"),
             "mc_pct": round(mc_map.get(pick["golfer_id"], 0) * 100) if show_cut and mc_map else None,
         })
+
+    # Apply effective_to_par for MC/WD/DQ golfers
+    if penalty_to_par is not None:
+        penalty_tp_str = f"+{penalty_to_par}" if penalty_to_par > 0 else ("E" if penalty_to_par == 0 else str(penalty_to_par))
+        for card in cards:
+            if card.get("status") in ("MC", "WD", "DQ"):
+                card["to_par"] = penalty_tp_str
 
     # Calculate team to-par and mark counting golfers
     team_to_par = _calc_team_to_par(cards)
